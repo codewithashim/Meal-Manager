@@ -4,8 +4,8 @@ import { getUserNotifications } from "@/server/actions/communicationActions";
 import NotificationClientPage from "@/features/notifications/components/NotificationClientPage";
 
 export const metadata = {
-  title: "Notifications | Mess Mate",
-  description: "Real-time updates regarding your meals, bills, complaints, and mess notices.",
+  title: "Notifications | Meal Manager",
+  description: "Real-time updates regarding your meals, bills, complaints, and notices.",
 };
 
 export default async function NotificationsPage() {

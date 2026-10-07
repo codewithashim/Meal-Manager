@@ -155,7 +155,7 @@ export default function FullMonthlyReportModal({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5 print:border-black print:pb-3">
           <div>
             <div className="text-xs font-bold uppercase tracking-widest text-blue-400 print:text-blue-700">
-              MESS-MATE MONTHLY INVOICES & BILLS STATEMENT REPORT
+              MEAL MANAGER MONTHLY INVOICES & BILLS STATEMENT REPORT
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-white print:text-black tracking-tight mt-1">
               {messName}

@@ -4,7 +4,7 @@ import { getPayments } from "@/server/actions/billingActions";
 import PaymentClientPage from "@/features/billing/components/PaymentClientPage";
  
 export const metadata = {
-  title: "Member Payments | Mess Mate",
+  title: "Member Payments | Meal Manager",
   description: "Record and track member rent and meal payments.",
 };
 

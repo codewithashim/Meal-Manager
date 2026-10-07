@@ -17,13 +17,13 @@ export async function loginAction(data: LoginInput) {
       await db.user.create({
         data: {
           name: "System Administrator",
-          email: "admin@messmate.com",
+          email: "admin@mealmanager.com",
           passwordHash: defaultPassword,
           role: "ADMIN",
           status: "ACTIVE",
         },
       });
-      console.log("Seeded default Admin account: admin@messmate.com / admin123");
+      console.log("Seeded default Admin account: admin@mealmanager.com / admin123");
     }
 
     await signIn("credentials", {

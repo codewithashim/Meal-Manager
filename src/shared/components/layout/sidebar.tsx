@@ -63,7 +63,7 @@ export function DashboardSidebar({ role, userName, permissions = [] }: SidebarPr
             <UtensilsCrossed className="w-6 h-6" />
           </div>
           <div>
-            <h2 className="font-extrabold text-slate-100 text-lg leading-tight">MessMate</h2>
+            <h2 className="font-extrabold text-slate-100 text-lg leading-tight">Meal Manager</h2>
             <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">{role} Portal</p>
           </div>
         </div>

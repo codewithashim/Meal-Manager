@@ -4,8 +4,8 @@ import { getExpenses } from "@/server/actions/billingActions";
 import ExpenseClientPage from "@/features/expenses/components/ExpenseClientPage";
 
 export const metadata = {
-  title: "Mess Expenses | Mess Mate",
-  description: "Track daily bazaar spending, utility bills, and mess operational expenses.",
+  title: "Expenses | Meal Manager",
+  description: "Track daily bazaar spending, utility bills, and operational expenses.",
 };
 
 export default async function ExpensesPage() {

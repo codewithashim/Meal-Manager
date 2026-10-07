@@ -2,8 +2,8 @@ import { Suspense } from "react";
 import { LoginForm } from "@/features/auth/components/login-form";
 
 export const metadata = {
-  title: "Login | MessMate Boarding Management",
-  description: "Sign in to access your mess account, meals, bills, and payments.",
+  title: "Login | Meal Manager System",
+  description: "Sign in to access your meal management account, meals, bills, and payments.",
 };
 
 export default function LoginPage() {

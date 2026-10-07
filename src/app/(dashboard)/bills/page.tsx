@@ -4,7 +4,7 @@ import { getMonthlyBills } from "@/server/actions/billingActions";
 import BillClientPage from "@/features/billing/components/BillClientPage";
 
 export const metadata = {
-  title: "Monthly Invoices & Bills | Mess Mate",
+  title: "Monthly Invoices & Bills | Meal Manager",
   description: "View itemized monthly bills, meal costs, room rent, and payment status.",
 };
 

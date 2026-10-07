@@ -46,7 +46,7 @@ export function LoginForm() {
           <ShieldCheck className="w-8 h-8" />
         </div>
         <h1 className="text-3xl font-extrabold tracking-tight text-slate-100">
-          Welcome to <span className="text-emerald-400">MessMate</span>
+          Welcome to <span className="text-emerald-400">Meal Manager</span>
         </h1>
         <p className="text-sm text-slate-400">
           Residential Mess & Boarding Management Portal
@@ -113,14 +113,6 @@ export function LoginForm() {
         </button>
       </form>
 
-      <div className="pt-4 border-t border-slate-800/80 text-center">
-        <p className="text-xs text-slate-500">
-          Initial setup default admin credentials: <br />
-          <code className="text-emerald-400 font-mono bg-slate-950 px-2 py-0.5 rounded border border-slate-800 mt-1 inline-block">
-            admin@messmate.com / admin123
-          </code>
-        </p>
-      </div>
     </div>
   );
 }

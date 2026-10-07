@@ -127,7 +127,7 @@ export default function MemberInvoiceModal({ isOpen, onClose, bill }: MemberInvo
         <div className="flex items-start justify-between border-b border-slate-800 print:border-black pb-4">
           <div>
             <div className="text-[10px] font-bold uppercase tracking-widest text-blue-400 print:text-blue-700">
-              MESS-MATE MONTHLY INVOICE SLIP
+              MEAL MANAGER MONTHLY INVOICE SLIP
             </div>
             <h1 className="text-xl sm:text-2xl font-black text-white print:text-black mt-0.5">
               {bill.user.name}

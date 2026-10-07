@@ -4,9 +4,9 @@ import { Role } from "@prisma/client";
 import { DashboardClientView } from "@/features/dashboard/components/DashboardClientView";
 
 export const metadata = {
-  title: "Dashboard | MessMate Boarding Management",
+  title: "Dashboard | Meal Manager System",
   description:
-    "Real-time mess management dashboard, live meal rate calculation, seat allocation & operational overview.",
+    "Real-time meal management dashboard, live meal rate calculation, seat allocation & operational overview.",
 };
 
 export default async function DashboardPage() {
@@ -309,7 +309,7 @@ export default async function DashboardPage() {
       userRole={role}
       userId={userId}
       mealStatus={userMealStatus}
-      messName={systemSetting?.messName || "MessMate Boarding"}
+      messName={systemSetting?.messName || "Meal Manager Boarding"}
       roomInfo={roomInfoStr}
       adminKpis={adminKpis}
       userKpis={userKpis}

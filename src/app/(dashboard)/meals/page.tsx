@@ -4,8 +4,8 @@ import { getDailyMeals, getMonthlyMealSummary } from "@/server/actions/mealActio
 import MealClientPage from "@/features/meals/components/MealClientPage";
 
 export const metadata = {
-  title: "Meal Ledger | Mess Mate",
-  description: "Track daily meals, monthly totals, and mess meal rate calculations.",
+  title: "Meal Ledger | Meal Manager",
+  description: "Track daily meals, monthly totals, and meal rate calculations.",
 };
 
 export default async function MealsPage() {

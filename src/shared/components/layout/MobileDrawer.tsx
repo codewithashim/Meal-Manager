@@ -44,7 +44,7 @@ export function MobileDrawer({ isOpen, onClose, role, userName, navItems }: Mobi
                 <UtensilsCrossed className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="font-extrabold text-white text-base leading-tight">MessMate</h2>
+                <h2 className="font-extrabold text-white text-base leading-tight">Meal Manager</h2>
                 <span className="text-[10px] text-emerald-400 font-mono block uppercase">{role}</span>
               </div>
             </div>

@@ -4,8 +4,8 @@ import { getRooms, getUnassignedUsers } from "@/server/actions/roomActions";
 import RoomClientPage from "@/features/rooms/components/RoomClientPage";
 
 export const metadata = {
-  title: "Rooms & Seat Allocation | Mess Mate",
-  description: "Manage mess rooms, floor layouts, seat capacities, and member seat assignments.",
+  title: "Rooms & Seat Allocation | Meal Manager",
+  description: "Manage rooms, floor layouts, seat capacities, and member seat assignments.",
 };
 
 export default async function RoomsPage() {

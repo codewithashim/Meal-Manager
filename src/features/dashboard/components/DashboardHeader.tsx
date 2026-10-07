@@ -19,7 +19,7 @@ export function DashboardHeader({
   userRole,
   userId,
   mealStatus,
-  messName = "MessMate Boarding",
+  messName = "Meal Manager Boarding",
   roomInfo,
 }: DashboardHeaderProps) {
   // Get time of day greeting

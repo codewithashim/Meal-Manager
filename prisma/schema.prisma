@@ -307,7 +307,7 @@ model AuditLog {
 
 model SystemSetting {
   id             String   @id @default("default") @map("_id")
-  messName       String   @default("My Boarding Mess")
+  messName       String   @default("Meal Manager Boarding")
   address        String?
   phone          String?
   email          String?

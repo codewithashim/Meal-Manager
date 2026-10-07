@@ -42,11 +42,11 @@ async function main() {
 
   // 3. Create Manager / Admin User
   const admin = await prisma.user.upsert({
-    where: { email: "admin@messmate.com" },
+    where: { email: "admin@mealmanager.com" },
     update: { passwordHash },
     create: {
-      name: "Mess Manager (Admin)",
-      email: "admin@messmate.com",
+      name: "Meal Manager (Admin)",
+      email: "admin@mealmanager.com",
       passwordHash,
       role: Role.ADMIN,
       status: UserStatus.ACTIVE,
@@ -54,18 +54,18 @@ async function main() {
       monthlyRent: 0,
       mealStatus: true,
       address: "Dhaka, Bangladesh",
-      occupation: "Mess Manager & Host Owner",
+      occupation: "Meal Manager & Host Owner",
     },
   });
   console.log(`✅ Admin Manager seeded: ${admin.email}`);
 
   // 4. Create 5 House Members with Fixed Room Rents
   const membersData = [
-    { name: "Member 1", email: "member1@messmate.com", rent: 5150, phone: "+8801700000001", room: "101", seat: "A" },
-    { name: "Member 2", email: "member2@messmate.com", rent: 2150, phone: "+8801700000002", room: "101", seat: "B" },
-    { name: "Member 3", email: "member3@messmate.com", rent: 2150, phone: "+8801700000003", room: "102", seat: "A" },
-    { name: "Member 4", email: "member4@messmate.com", rent: 4650, phone: "+8801700000004", room: "102", seat: "B" },
-    { name: "Member 5", email: "member5@messmate.com", rent: 1500, phone: "+8801700000005", room: "103", seat: "A" },
+    { name: "Member 1", email: "member1@mealmanager.com", rent: 5150, phone: "+8801700000001", room: "101", seat: "A" },
+    { name: "Member 2", email: "member2@mealmanager.com", rent: 2150, phone: "+8801700000002", room: "101", seat: "B" },
+    { name: "Member 3", email: "member3@mealmanager.com", rent: 2150, phone: "+8801700000003", room: "102", seat: "A" },
+    { name: "Member 4", email: "member4@mealmanager.com", rent: 4650, phone: "+8801700000004", room: "102", seat: "B" },
+    { name: "Member 5", email: "member5@mealmanager.com", rent: 1500, phone: "+8801700000005", room: "103", seat: "A" },
   ];
 
   const seededMembers = [];
@@ -405,12 +405,12 @@ async function main() {
   console.log("\n🎉 Full Month (October 2026) Seeding Completed Successfully!");
   console.log("------------------------------------------------------------");
   console.log("🔑 Login Credentials for Testing:");
-  console.log("   Admin Manager: admin@messmate.com | Pass: 123456");
-  console.log("   Member 1: member1@messmate.com | Pass: 123456 | Rent: ৳5,150");
-  console.log("   Member 2: member2@messmate.com | Pass: 123456 | Rent: ৳2,150");
-  console.log("   Member 3: member3@messmate.com | Pass: 123456 | Rent: ৳2,150");
-  console.log("   Member 4: member4@messmate.com | Pass: 123456 | Rent: ৳4,650");
-  console.log("   Member 5: member5@messmate.com | Pass: 123456 | Rent: ৳1,500");
+  console.log("   Admin Manager: admin@mealmanager.com | Pass: 123456");
+  console.log("   Member 1: member1@mealmanager.com | Pass: 123456 | Rent: ৳5,150");
+  console.log("   Member 2: member2@mealmanager.com | Pass: 123456 | Rent: ৳2,150");
+  console.log("   Member 3: member3@mealmanager.com | Pass: 123456 | Rent: ৳2,150");
+  console.log("   Member 4: member4@mealmanager.com | Pass: 123456 | Rent: ৳4,650");
+  console.log("   Member 5: member5@mealmanager.com | Pass: 123456 | Rent: ৳1,500");
   console.log("------------------------------------------------------------");
 }
 

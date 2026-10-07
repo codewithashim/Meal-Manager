@@ -5,7 +5,7 @@ import { getUsers } from "@/server/actions/userActions";
 import { AuditLogsClientPage } from "@/features/audit/components/AuditLogsClientPage";
 
 export const metadata = {
-  title: "Access Control & Audit Logs | MessMate",
+  title: "Access Control & Audit Logs | Meal Manager",
   description:
     "Configure user access control permissions and track system security audit trails.",
 };

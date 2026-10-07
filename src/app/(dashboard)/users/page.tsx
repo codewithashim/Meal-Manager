@@ -4,8 +4,8 @@ import { getUsers } from "@/server/actions/userActions";
 import UserClientPage from "@/features/users/components/UserClientPage";
 
 export const metadata = {
-  title: "Member Management | Mess Mate",
-  description: "Manage mess members, roles, status, and room rents.",
+  title: "Member Management | Meal Manager",
+  description: "Manage members, roles, status, and room rents.",
 };
 
 export default async function UsersPage() {

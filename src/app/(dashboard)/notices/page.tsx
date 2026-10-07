@@ -4,8 +4,8 @@ import { getNotices } from "@/server/actions/communicationActions";
 import NoticeClientPage from "@/features/notices/components/NoticeClientPage";
 
 export const metadata = {
-  title: "Notice Board | Mess Mate",
-  description: "View announcements, rule updates, and mess notices.",
+  title: "Notice Board | Meal Manager",
+  description: "View announcements, rule updates, and notices.",
 };
 
 export default async function NoticesPage() {

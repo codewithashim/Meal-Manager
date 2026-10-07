@@ -30,7 +30,7 @@ export function DashboardTopbar({ userName, role, onOpenDrawer }: TopbarProps) {
           </div>
           <div>
             <h1 className="text-sm font-bold text-white tracking-tight leading-tight">
-              MessMate
+              Meal Manager
             </h1>
             <span className="text-[10px] text-slate-400 hidden sm:inline">
               Residential Mess Portal
