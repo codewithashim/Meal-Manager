@@ -10,17 +10,23 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     Credentials({
       name: "Credentials",
       credentials: {
-        email: { label: "Email", type: "email" },
+        identifier: { label: "Email or Phone", type: "text" },
+        email: { label: "Email", type: "text" },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
         const validatedFields = loginSchema.safeParse(credentials);
         if (!validatedFields.success) return null;
 
-        const { email, password } = validatedFields.data;
+        const { identifier, password } = validatedFields.data;
 
-        const user = await db.user.findUnique({
-          where: { email },
+        const user = await db.user.findFirst({
+          where: {
+            OR: [
+              { email: identifier.toLowerCase() },
+              { phone: identifier },
+            ],
+          },
         });
 
         if (!user || !user.passwordHash) return null;

@@ -1,172 +1,94 @@
 "use server";
 
-import { db } from "@/lib/db";
 import { auth } from "@/auth";
-import { enforcePermission } from "@/lib/permissions";
-import {
-  createComplaintSchema,
-  updateComplaintStatusSchema,
-  createNoticeSchema,
-  CreateComplaintInput,
-  UpdateComplaintStatusInput,
-  CreateNoticeInput,
-} from "@/lib/validations/communication";
+import { ComplaintService } from "@/features/complaints/services/complaint.service";
+import { NoticeService } from "@/features/notices/services/notice.service";
+import { AuditService } from "@/services/audit.service";
+import { NotificationService } from "@/services/notification.service";
+import { Priority, ComplaintStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 
 /* ==========================================================================
    COMPLAINTS ACTIONS
    ========================================================================== */
 
-export async function getComplaints(statusFilter?: string, categoryFilter?: string) {
+export async function getComplaints(
+  categoryFilter?: string,
+  priorityFilter?: string,
+  statusFilter?: string
+) {
   const session = await auth();
   if (!session?.user) throw new Error("Unauthorized");
 
-  enforcePermission(session.user.role, "COMPLAINTS", "READ");
-
-  const where: any = {};
-
-  // General users can only view their own complaints
-  if (session.user.role === "USER") {
-    where.userId = session.user.id;
-  }
-
-  if (statusFilter && statusFilter !== "ALL") {
-    where.status = statusFilter;
-  }
-
-  if (categoryFilter && categoryFilter !== "ALL") {
-    where.category = categoryFilter;
-  }
-
-  const complaints = await db.complaint.findMany({
-    where,
-    include: {
-      user: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          phone: true,
-        },
-      },
-    },
-    orderBy: { createdAt: "desc" },
-  });
-
-  return complaints;
+  return await ComplaintService.getComplaints(
+    session.user.role,
+    session.user.permissions,
+    session.user.id,
+    categoryFilter,
+    priorityFilter,
+    statusFilter
+  );
 }
 
-export async function createComplaint(data: CreateComplaintInput) {
+export async function createComplaint(data: {
+  title: string;
+  category: any;
+  description: string;
+  priority: Priority;
+}) {
   const session = await auth();
   if (!session?.user) return { error: "Unauthorized" };
 
   try {
-    enforcePermission(session.user.role, "COMPLAINTS", "CREATE");
+    const result = await ComplaintService.createComplaint(
+      session.user.id,
+      session.user.role,
+      session.user.permissions,
+      data
+    );
+    if (result.success) revalidatePath("/complaints");
+    return result;
   } catch (err: any) {
     return { error: err.message };
   }
-
-  const parsed = createComplaintSchema.safeParse(data);
-  if (!parsed.success) {
-    return { error: parsed.error.issues[0].message };
-  }
-
-  const newComplaint = await db.complaint.create({
-    data: {
-      userId: session.user.id,
-      title: parsed.data.title,
-      category: parsed.data.category,
-      description: parsed.data.description,
-      priority: parsed.data.priority,
-      status: "PENDING",
-    },
-    include: { user: true },
-  });
-
-  // Notify Admins & Managers
-  const adminsAndManagers = await db.user.findMany({
-    where: { role: { in: ["ADMIN", "MANAGER"] } },
-    select: { id: true },
-  });
-
-  const notifications = adminsAndManagers.map((staff) => ({
-    userId: staff.id,
-    title: `New Complaint: ${newComplaint.title}`,
-    message: `${newComplaint.user.name} submitted a ${newComplaint.priority} priority complaint (${newComplaint.category}).`,
-    type: "COMPLAINT" as const,
-  }));
-
-  if (notifications.length > 0) {
-    await db.notification.createMany({ data: notifications });
-  }
-
-  await db.auditLog.create({
-    data: {
-      actorId: session.user.id,
-      action: "CREATE_COMPLAINT",
-      entity: "Complaint",
-      entityId: newComplaint.id,
-      details: `Submitted complaint "${newComplaint.title}" (${newComplaint.priority})`,
-    },
-  });
-
-  revalidatePath("/complaints");
-  return { success: true, complaint: newComplaint };
 }
 
-export async function updateComplaintStatus(data: UpdateComplaintStatusInput) {
+export async function updateComplaintStatus(
+  input: string | { id: string; status: ComplaintStatus; adminNote?: string },
+  statusParam?: ComplaintStatus,
+  adminNoteParam?: string
+) {
   const session = await auth();
   if (!session?.user) return { error: "Unauthorized" };
 
+  let id: string;
+  let status: ComplaintStatus;
+  let adminNote: string | undefined;
+
+  if (typeof input === "object") {
+    id = input.id;
+    status = input.status;
+    adminNote = input.adminNote;
+  } else {
+    id = input;
+    status = statusParam!;
+    adminNote = adminNoteParam;
+  }
+
   try {
-    enforcePermission(session.user.role, "COMPLAINTS", "UPDATE");
-  } catch (err: any) {
-    return { error: err.message };
-  }
-
-  const parsed = updateComplaintStatusSchema.safeParse(data);
-  if (!parsed.success) {
-    return { error: parsed.error.issues[0].message };
-  }
-
-  const { id, status, adminNote } = parsed.data;
-
-  const complaint = await db.complaint.findUnique({ where: { id } });
-  if (!complaint) return { error: "Complaint not found." };
-
-  const updated = await db.complaint.update({
-    where: { id },
-    data: {
+    const result = await ComplaintService.updateStatus(
+      session.user.id,
+      session.user.role,
+      session.user.permissions,
+      id,
       status,
-      adminNote: adminNote || null,
-      resolvedAt: status === "RESOLVED" ? new Date() : null,
-    },
-  });
-
-  // Send notification to member
-  await db.notification.create({
-    data: {
-      userId: complaint.userId,
-      title: `Complaint Status Updated: ${status}`,
-      message: `Your complaint "${complaint.title}" has been marked as ${status}.${
-        adminNote ? ` Manager note: ${adminNote}` : ""
-      }`,
-      type: "COMPLAINT",
-    },
-  });
-
-  await db.auditLog.create({
-    data: {
-      actorId: session.user.id,
-      action: "UPDATE_COMPLAINT_STATUS",
-      entity: "Complaint",
-      entityId: id,
-      details: `Updated complaint "${complaint.title}" status to ${status}`,
-    },
-  });
-
-  revalidatePath("/complaints");
-  return { success: true, complaint: updated };
+      adminNote
+    );
+    if (result.success) revalidatePath("/complaints");
+    return result;
+  } catch (err: any) {
+    return { error: err.message };
+  }
 }
 
 /* ==========================================================================
@@ -177,80 +99,32 @@ export async function getNotices() {
   const session = await auth();
   if (!session?.user) throw new Error("Unauthorized");
 
-  enforcePermission(session.user.role, "NOTICES", "READ");
-
-  const notices = await db.notice.findMany({
-    include: {
-      createdBy: {
-        select: {
-          id: true,
-          name: true,
-          role: true,
-        },
-      },
-    },
-    orderBy: { createdAt: "desc" },
-  });
-
-  return notices;
+  return await NoticeService.getNotices(
+    session.user.role,
+    session.user.permissions
+  );
 }
 
-export async function createNotice(data: CreateNoticeInput) {
+export async function createNotice(data: {
+  title: string;
+  description: string;
+  priority: Priority;
+}) {
   const session = await auth();
   if (!session?.user) return { error: "Unauthorized" };
 
   try {
-    enforcePermission(session.user.role, "NOTICES", "CREATE");
+    const result = await NoticeService.createNotice(
+      session.user.id,
+      session.user.role,
+      session.user.permissions,
+      data
+    );
+    if (result.success) revalidatePath("/notices");
+    return result;
   } catch (err: any) {
     return { error: err.message };
   }
-
-  const parsed = createNoticeSchema.safeParse(data);
-  if (!parsed.success) {
-    return { error: parsed.error.issues[0].message };
-  }
-
-  const expiryDate = parsed.data.expiryDate ? new Date(parsed.data.expiryDate) : null;
-
-  const newNotice = await db.notice.create({
-    data: {
-      title: parsed.data.title,
-      description: parsed.data.description,
-      priority: parsed.data.priority,
-      expiryDate,
-      createdById: session.user.id,
-    },
-  });
-
-  // Broadcast notification to ALL active users
-  const activeUsers = await db.user.findMany({
-    where: { status: "ACTIVE" },
-    select: { id: true },
-  });
-
-  const notifications = activeUsers.map((u) => ({
-    userId: u.id,
-    title: `Notice: ${newNotice.title}`,
-    message: newNotice.description.substring(0, 100) + "...",
-    type: "NOTICE" as const,
-  }));
-
-  if (notifications.length > 0) {
-    await db.notification.createMany({ data: notifications });
-  }
-
-  await db.auditLog.create({
-    data: {
-      actorId: session.user.id,
-      action: "CREATE_NOTICE",
-      entity: "Notice",
-      entityId: newNotice.id,
-      details: `Published notice "${newNotice.title}" (${newNotice.priority})`,
-    },
-  });
-
-  revalidatePath("/notices");
-  return { success: true, notice: newNotice };
 }
 
 export async function deleteNotice(id: string) {
@@ -258,25 +132,17 @@ export async function deleteNotice(id: string) {
   if (!session?.user) return { error: "Unauthorized" };
 
   try {
-    enforcePermission(session.user.role, "NOTICES", "DELETE");
+    const result = await NoticeService.deleteNotice(
+      session.user.id,
+      session.user.role,
+      session.user.permissions,
+      id
+    );
+    if (result.success) revalidatePath("/notices");
+    return result;
   } catch (err: any) {
     return { error: err.message };
   }
-
-  await db.notice.delete({ where: { id } });
-
-  await db.auditLog.create({
-    data: {
-      actorId: session.user.id,
-      action: "DELETE_NOTICE",
-      entity: "Notice",
-      entityId: id,
-      details: `Deleted notice ${id}`,
-    },
-  });
-
-  revalidatePath("/notices");
-  return { success: true };
 }
 
 /* ==========================================================================
@@ -287,26 +153,14 @@ export async function getUserNotifications() {
   const session = await auth();
   if (!session?.user) throw new Error("Unauthorized");
 
-  const notifications = await db.notification.findMany({
-    where: { userId: session.user.id },
-    orderBy: { createdAt: "desc" },
-    take: 50,
-  });
-
-  const unreadCount = notifications.filter((n) => !n.read).length;
-
-  return { notifications, unreadCount };
+  return await NotificationService.getUserNotifications(session.user.id);
 }
 
 export async function markNotificationAsRead(id: string) {
   const session = await auth();
   if (!session?.user) return { error: "Unauthorized" };
 
-  await db.notification.update({
-    where: { id },
-    data: { read: true },
-  });
-
+  await NotificationService.markAsRead(id, session.user.id);
   revalidatePath("/notifications");
   return { success: true };
 }
@@ -315,11 +169,7 @@ export async function markAllNotificationsAsRead() {
   const session = await auth();
   if (!session?.user) return { error: "Unauthorized" };
 
-  await db.notification.updateMany({
-    where: { userId: session.user.id, read: false },
-    data: { read: true },
-  });
-
+  await NotificationService.markAllAsRead(session.user.id);
   revalidatePath("/notifications");
   return { success: true };
 }
@@ -332,22 +182,13 @@ export async function getAuditLogs() {
   const session = await auth();
   if (!session?.user) throw new Error("Unauthorized");
 
-  enforcePermission(session.user.role, "AUDIT_LOGS", "READ");
+  const hasAccess =
+    session.user.role === "ADMIN" ||
+    (session.user.permissions && session.user.permissions.includes("AUDIT_LOGS"));
 
-  const logs = await db.auditLog.findMany({
-    include: {
-      actor: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          role: true,
-        },
-      },
-    },
-    orderBy: { timestamp: "desc" },
-    take: 100,
-  });
+  if (!hasAccess) {
+    throw new Error("Forbidden");
+  }
 
-  return logs;
+  return await AuditService.getLogs();
 }

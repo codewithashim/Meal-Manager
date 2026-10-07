@@ -218,23 +218,34 @@ model Payment {
 }
 
 model MonthlyBill {
-  id           String     @id @default(auto()) @map("_id") @db.ObjectId
-  userId       String     @db.ObjectId
-  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  month        String
-  totalMeals   Float      @default(0)
-  mealRate     Float      @default(0)
-  mealCost     Float      @default(0)
-  roomRent     Float      @default(0)
-  utilityShare Float      @default(0)
-  otherCharges Float      @default(0)
-  totalBill    Float      @default(0)
-  totalPaid    Float      @default(0)
-  dueAmount    Float      @default(0)
-  status       BillStatus @default(UNPAID)
+  id               String     @id @default(auto()) @map("_id") @db.ObjectId
+  userId           String     @db.ObjectId
+  user             User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  month            String
+  totalMeals       Float      @default(0)
+  mealRate         Float      @default(0)
+  mealCost         Float      @default(0)
+  roomRent         Float      @default(0)
+  utilityShare     Float      @default(0)
+  otherCharges     Float      @default(0)
 
-  generatedAt  DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  // Itemized Mess Utility & Service Breakdown
+  electricityShare Float      @default(0)
+  gasShare         Float      @default(0)
+  waterShare       Float      @default(0)
+  khalaShare       Float      @default(0)
+  wifiShare        Float      @default(0)
+
+  // Grocery / Bazar expense deposited by this member
+  bazarDeposited   Float      @default(0)
+
+  totalBill        Float      @default(0)
+  totalPaid        Float      @default(0)
+  dueAmount        Float      @default(0)
+  status           BillStatus @default(UNPAID)
+
+  generatedAt      DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
 
   @@unique([userId, month])
 }
