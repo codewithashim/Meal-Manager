@@ -70,7 +70,7 @@ export default function AppDrawer({
   const isDesktopRight = position === "bottom-mobile-right-desktop" || position === "right";
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex flex-col justify-end md:justify-center print:p-0 print:static print:block">
+    <div className="fixed inset-0 z-[200] flex flex-col justify-end md:justify-center print:p-0 print:static print:block">
       
       {/* Backdrop */}
       <div
@@ -78,20 +78,24 @@ export default function AppDrawer({
         onClick={onClose}
       />
 
-      {/* Drawer Body Container: Bottom Sheet on Mobile, Right Slide-over / Centered on Desktop */}
+      {/* Drawer Body Container */}
       <div
         className={`relative w-full ${widthClasses} z-10 glass-drawer text-slate-100 shadow-2xl flex flex-col transition-all print:w-full print:max-w-none print:shadow-none print:border-none print:p-0 print:bg-white print:text-black ${
           isDesktopRight
-            ? "rounded-t-3xl md:rounded-t-none md:rounded-l-3xl max-h-[88vh] md:max-h-full md:h-full md:ml-auto animate-slideUp md:animate-slideLeft border-t md:border-t-0 md:border-l border-slate-700/80"
-            : "rounded-t-3xl md:rounded-3xl max-h-[90vh] md:mx-auto animate-slideUp md:animate-scaleUp border-t md:border border-slate-700/80"
+            ? "h-full h-[100dvh] md:h-full max-h-full md:ml-auto rounded-none md:rounded-l-3xl animate-slideUp md:animate-slideLeft border-t-0 md:border-l border-slate-700/80"
+            : "h-full h-[100dvh] md:h-auto max-h-full md:mx-auto rounded-none md:rounded-3xl animate-slideUp md:animate-scaleUp border-t-0 md:border border-slate-700/80"
         }`}
       >
         {/* Mobile Pull/Drag Bar Handle */}
-        <div className="w-12 h-1.5 bg-slate-700/80 rounded-full mx-auto my-2.5 shrink-0 md:hidden print:hidden" />
+        <div
+          onClick={onClose}
+          className="w-12 h-1.5 bg-slate-600/80 hover:bg-slate-400 rounded-full mx-auto my-2.5 shrink-0 cursor-pointer md:hidden print:hidden transition"
+          title="Tap or drag down to dismiss"
+        />
 
         {/* Drawer Header */}
         {(title || subtitle || icon) && (
-          <div className="flex items-center justify-between px-5 sm:px-7 py-4 border-b border-slate-800 shrink-0 print:pb-2">
+          <div className="flex items-center justify-between px-5 sm:px-7 pb-3 pt-0.5 sm:py-4 border-b border-slate-800 shrink-0 print:pb-2">
             <div className="flex items-center gap-3">
               {icon && (
                 <div className="p-2.5 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0">
@@ -121,13 +125,13 @@ export default function AppDrawer({
         )}
 
         {/* Drawer Scrollable Content */}
-        <div className="flex-1 overflow-y-auto p-5 sm:p-7 space-y-4 print:p-0">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-7 space-y-4 print:p-0">
           {children}
         </div>
 
-        {/* Drawer Footer */}
+        {/* Drawer Footer (Compact, Clean Padding) */}
         {footer && (
-          <div className="px-5 sm:px-7 py-4 border-t border-slate-800 bg-slate-950/80 rounded-b-3xl shrink-0 print:hidden">
+          <div className="px-4 sm:px-7 py-3.5 border-t border-slate-800 bg-slate-950/95 backdrop-blur-lg shrink-0 print:hidden shadow-lg">
             {footer}
           </div>
         )}
