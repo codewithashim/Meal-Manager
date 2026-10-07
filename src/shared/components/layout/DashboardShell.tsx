@@ -80,7 +80,7 @@ export function DashboardShell({
       />
 
       {/* Main App Container */}
-      <div className="flex-1 flex flex-col min-w-0 pb-16 lg:pb-0">
+      <div className="flex-1 flex flex-col min-w-0 pb-24 lg:pb-0">
         {/* Topbar */}
         <DashboardTopbar
           userName={userName}

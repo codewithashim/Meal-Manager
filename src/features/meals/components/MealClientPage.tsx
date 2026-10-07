@@ -29,7 +29,7 @@ export default function MealClientPage({
   const [activeTab, setActiveTab] = useState<"CALENDAR" | "DAILY" | "MONTHLY" | "MY_MEALS">("CALENDAR");
 
   return (
-    <div className="space-y-4 sm:space-y-6 animate-fadeIn">
+    <div className="space-y-4 sm:space-y-6 animate-fadeIn pb-28 lg:pb-8">
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

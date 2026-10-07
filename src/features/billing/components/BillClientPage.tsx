@@ -103,25 +103,25 @@ export default function BillClientPage({
   };
 
   return (
-    <div className="space-y-6 animate-fadeIn">
+    <div className="space-y-6 animate-fadeIn pb-28 lg:pb-8">
       
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
-            <FileSpreadsheet className="w-7 h-7 text-blue-500" />
+          <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight flex items-center gap-2">
+            <FileSpreadsheet className="w-6 h-6 sm:w-7 sm:h-7 text-blue-500" />
             Mess Monthly Invoices & Bills (মেসের মাসিক বিল ও হিসাব)
           </h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-xs sm:text-sm text-slate-400 mt-1">
             Easy-to-understand breakdown of Room Rent, Meals, Electricity, Gas, Water, Maid (Khala), and WiFi.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="grid grid-cols-1 sm:flex items-center gap-2.5 w-full sm:w-auto">
           {/* Download Full Monthly PDF Report Button */}
           <button
             onClick={() => setIsFullReportModalOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 transition hover:scale-[1.02] cursor-pointer"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium text-xs sm:text-sm bg-slate-800 hover:bg-slate-700 active:scale-95 text-white border border-slate-700 transition cursor-pointer"
           >
             <Printer className="w-4 h-4 text-blue-400" /> Download Full Monthly PDF
           </button>
@@ -129,7 +129,7 @@ export default function BillClientPage({
           {canManage && (
             <button
               onClick={() => setIsGenerateModalOpen(true)}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium text-sm bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg shadow-blue-500/20 transition hover:scale-[1.02] cursor-pointer"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-xs sm:text-sm bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg shadow-blue-500/20 active:scale-95 transition cursor-pointer"
             >
               <Plus className="w-4 h-4" /> Calculate & Generate Bills
             </button>
@@ -138,46 +138,46 @@ export default function BillClientPage({
       </div>
 
       {/* Financial Summary KPIs */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 sm:gap-4">
         
-        <div className="glass-card glass-card-hover rounded-2xl p-4 sm:p-5 border border-slate-800">
+        <div className="glass-card glass-card-hover rounded-2xl p-4 sm:p-5 border border-slate-800/80 shadow-md">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Billed (মোট বিল)</span>
             <div className="p-2 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
               <Receipt className="w-5 h-5" />
             </div>
           </div>
-          <div className="text-2xl font-bold text-white mt-2">৳{totalBilled.toLocaleString()}</div>
+          <div className="text-2xl font-extrabold text-white mt-2">৳{totalBilled.toLocaleString()}</div>
           <p className="text-xs text-slate-400 mt-1">Total invoiced amount for {selectedMonth}</p>
         </div>
 
-        <div className="glass-card glass-card-hover rounded-2xl p-4 sm:p-5 border border-slate-800">
+        <div className="glass-card glass-card-hover rounded-2xl p-4 sm:p-5 border border-slate-800/80 shadow-md">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Collected Payments (সংগৃহীত)</span>
             <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
               <CheckCircle2 className="w-5 h-5" />
             </div>
           </div>
-          <div className="text-2xl font-bold text-emerald-400 mt-2">৳{totalCollected.toLocaleString()}</div>
+          <div className="text-2xl font-extrabold text-emerald-400 mt-2">৳{totalCollected.toLocaleString()}</div>
           <p className="text-xs text-slate-400 mt-1">Direct payments received</p>
         </div>
 
-        <div className="glass-card glass-card-hover rounded-2xl p-4 sm:p-5 border border-slate-800">
+        <div className="glass-card glass-card-hover rounded-2xl p-4 sm:p-5 border border-slate-800/80 shadow-md">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Outstanding Due (মোট বকেয়া)</span>
             <div className="p-2 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20">
               <AlertCircle className="w-5 h-5" />
             </div>
           </div>
-          <div className="text-2xl font-bold text-rose-400 mt-2">৳{totalDue.toLocaleString()}</div>
+          <div className="text-2xl font-extrabold text-rose-400 mt-2">৳{totalDue.toLocaleString()}</div>
           <p className="text-xs text-slate-400 mt-1">Pending collection across members</p>
         </div>
 
       </div>
 
       {/* Easy Formula Explanation Callout */}
-      <div className="glass-card rounded-2xl p-4 border border-slate-800/90 bg-gradient-to-r from-slate-900/90 via-slate-950/90 to-slate-900/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
+      <div className="glass-card rounded-2xl p-4 border border-slate-800/90 bg-gradient-to-r from-slate-900/90 via-slate-950/90 to-slate-900/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
+        <div className="flex items-start sm:items-center gap-3">
           <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 shrink-0">
             <HelpCircle className="w-5 h-5" />
           </div>
@@ -185,43 +185,41 @@ export default function BillClientPage({
             <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
               How Your Final Bill is Calculated (হিসাব যেভাবে হয়)
             </h3>
-            <p className="text-xs text-slate-300 mt-0.5">
+            <p className="text-xs text-slate-300 mt-1 sm:mt-0.5 leading-relaxed">
               <strong className="text-white">Final Balance (নিট হিসাব)</strong> = (Room Rent + Meal Cost + Shared Utilities) - (Bazar Money Deposited + Direct Paid)
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 self-start sm:self-auto text-xs">
-          <span className="px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-semibold">
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span className="px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-semibold text-[11px]">
             Negative (-) = Refund to Member
           </span>
-          <span className="px-3 py-1 rounded-full bg-rose-500/15 text-rose-400 border border-rose-500/30 font-semibold">
+          <span className="px-2.5 py-1 rounded-full bg-rose-500/15 text-rose-400 border border-rose-500/30 font-semibold text-[11px]">
             Positive (+) = Member Must Pay
           </span>
         </div>
       </div>
 
       {/* Month Selector Bar & Mess Summary Toggle */}
-      <div className="glass-card rounded-2xl p-4 border border-slate-800 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowSummarySheet(!showSummarySheet)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-xs font-medium text-slate-300 transition cursor-pointer"
-          >
-            {showSummarySheet ? <ChevronUp className="w-4 h-4 text-blue-400" /> : <ChevronDown className="w-4 h-4 text-blue-400" />}
-            {showSummarySheet ? "Hide Master Calculation Sheet" : "Show Master Calculation Sheet"}
-          </button>
-        </div>
+      <div className="glass-card rounded-2xl p-3.5 sm:p-4 border border-slate-800/80 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shadow-lg">
+        <button
+          onClick={() => setShowSummarySheet(!showSummarySheet)}
+          className="flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-xs font-semibold text-slate-300 transition cursor-pointer active:scale-95"
+        >
+          {showSummarySheet ? <ChevronUp className="w-4 h-4 text-blue-400" /> : <ChevronDown className="w-4 h-4 text-blue-400" />}
+          {showSummarySheet ? "Hide Master Calculation Sheet" : "Show Master Calculation Sheet"}
+        </button>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between sm:justify-end gap-2">
           <span className="text-xs sm:text-sm font-semibold text-white">Select Billing Month:</span>
           <div className="relative flex items-center gap-2 bg-slate-900 border border-slate-700/80 rounded-xl px-3 sm:px-4 py-2 text-white">
-            <Calendar className="w-4 h-4 text-blue-400" />
+            <Calendar className="w-4 h-4 text-blue-400 shrink-0" />
             <input
               type="month"
               value={selectedMonth}
               onChange={(e) => handleMonthChange(e.target.value)}
-              className="bg-transparent font-medium text-xs sm:text-sm focus:outline-none cursor-pointer"
+              className="bg-transparent font-semibold text-xs sm:text-sm focus:outline-none cursor-pointer"
             />
           </div>
         </div>
@@ -233,7 +231,7 @@ export default function BillClientPage({
       )}
 
       {/* Native Mobile Cards View (< md) */}
-      <div className="block md:hidden space-y-3">
+      <div className="block md:hidden space-y-3.5">
         {bills.length === 0 ? (
           <div className="glass-card rounded-2xl p-8 text-center text-slate-500">
             No monthly bills generated yet for {selectedMonth}.
@@ -253,25 +251,25 @@ export default function BillClientPage({
             const absDue = Math.abs(netDue);
 
             return (
-              <div key={b.id} className="glass-card rounded-2xl p-4 border border-slate-800 space-y-3 shadow-lg">
+              <div key={b.id} className="glass-card rounded-2xl p-4 border border-slate-800/80 space-y-3.5 shadow-lg">
                 
                 {/* Header */}
-                <div className="flex items-start justify-between">
+                <div className="flex items-start justify-between gap-2">
                   <div>
                     <h3 className="font-bold text-white text-base leading-tight">{b.user.name}</h3>
-                    <div className="text-xs text-slate-400">{b.user.email}</div>
+                    <div className="text-xs text-slate-400 truncate max-w-[170px]">{b.user.email}</div>
                   </div>
                   <div>
                     {isRefund ? (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-extrabold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                         <ArrowDownRight className="w-3.5 h-3.5" /> Refund ৳{absDue.toFixed(0)}
                       </span>
                     ) : netDue === 0 ? (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
                         Settled
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-extrabold bg-rose-500/20 text-rose-400 border border-rose-500/30">
                         <ArrowUpRight className="w-3.5 h-3.5" /> Pay ৳{absDue.toFixed(0)}
                       </span>
                     )}
@@ -279,31 +277,31 @@ export default function BillClientPage({
                 </div>
 
                 {/* Itemized Grid */}
-                <div className="grid grid-cols-3 gap-2 bg-slate-950/70 p-3 rounded-xl border border-slate-800 text-center text-xs">
+                <div className="grid grid-cols-3 gap-2 bg-slate-950/80 p-3 rounded-xl border border-slate-800/80 text-center text-xs">
                   <div>
-                    <span className="text-[10px] text-amber-400 font-bold block">Meals ({b.totalMeals})</span>
+                    <span className="text-[10px] text-amber-400 font-bold block uppercase tracking-wider">Meals ({b.totalMeals})</span>
                     <span className="font-bold text-slate-200">৳{b.mealCost.toFixed(0)}</span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-blue-400 font-bold block">Rent</span>
+                    <span className="text-[10px] text-blue-400 font-bold block uppercase tracking-wider">Rent</span>
                     <span className="font-bold text-slate-200">৳{b.roomRent.toFixed(0)}</span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-purple-400 font-bold block">Utilities & Maid</span>
+                    <span className="text-[10px] text-purple-400 font-bold block uppercase tracking-wider">Utilities & Maid</span>
                     <span className="font-bold text-slate-200">৳{utilTotal.toFixed(0)}</span>
                   </div>
                 </div>
 
                 {/* Invoice Footer Totals */}
-                <div className="pt-2 border-t border-slate-800 flex items-center justify-between">
+                <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between gap-2">
                   <div>
-                    <span className="text-[10px] text-slate-400 block uppercase">Bazar Deposited: ৳{bazar.toFixed(0)}</span>
+                    <span className="text-[10px] text-slate-400 block uppercase font-medium">Bazar Deposited: ৳{bazar.toFixed(0)}</span>
                     <span className="font-extrabold text-white text-sm">Total Bill: ৳{b.totalBill.toFixed(0)}</span>
                   </div>
 
                   <button
                     onClick={() => setSelectedBillForInvoice(b)}
-                    className="px-3 py-1.5 rounded-xl bg-blue-600/20 text-blue-400 border border-blue-500/30 text-xs font-semibold flex items-center gap-1 hover:bg-blue-600 hover:text-white transition cursor-pointer"
+                    className="px-3.5 py-2 rounded-xl bg-blue-600/20 text-blue-400 border border-blue-500/30 text-xs font-semibold flex items-center gap-1.5 hover:bg-blue-600 hover:text-white active:scale-95 transition cursor-pointer shrink-0"
                   >
                     <Eye className="w-3.5 h-3.5" /> View & PDF Slip
                   </button>

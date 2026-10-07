@@ -150,39 +150,42 @@ export default function DailyMealLedger({ initialDate, initialRecords, canEdit }
     <div className="space-y-6">
       
       {/* Date Navigation & Controls */}
-      <div className="glass-card rounded-2xl p-4 sm:p-5 border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="glass-card rounded-2xl p-3.5 sm:p-5 border border-slate-800/80 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 sm:gap-4 shadow-lg">
         
         {/* Date Selector */}
-        <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-between sm:justify-start">
+        <div className="flex items-center gap-1.5 sm:gap-2 w-full md:w-auto">
           <button
+            type="button"
             onClick={() => shiftDate(-1)}
-            className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+            className="p-2 sm:p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white active:scale-95 transition cursor-pointer"
             title="Previous Day"
           >
-            <ChevronLeft className="w-5 h-5" />
+            <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
 
-          <div className="relative flex items-center gap-2 bg-slate-900 border border-slate-700/80 rounded-xl px-3 sm:px-4 py-2 text-white">
-            <Calendar className="w-4 h-4 text-blue-400" />
+          <div className="flex-1 sm:flex-initial relative flex items-center justify-center gap-2 bg-slate-900 border border-slate-700/80 rounded-xl px-2.5 sm:px-4 py-2 text-white">
+            <Calendar className="w-4 h-4 text-emerald-400 shrink-0" />
             <input
               type="date"
               value={selectedDate}
               onChange={(e) => handleDateChange(e.target.value)}
-              className="bg-transparent font-medium text-xs sm:text-sm focus:outline-none cursor-pointer"
+              className="bg-transparent font-semibold text-xs sm:text-sm focus:outline-none cursor-pointer text-center"
             />
           </div>
 
           <button
+            type="button"
             onClick={() => shiftDate(1)}
-            className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+            className="p-2 sm:p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white active:scale-95 transition cursor-pointer"
             title="Next Day"
           >
-            <ChevronRight className="w-5 h-5" />
+            <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
 
           <button
+            type="button"
             onClick={() => handleDateChange(new Date().toISOString().split("T")[0])}
-            className="px-3 py-2 text-xs font-semibold rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 transition cursor-pointer"
+            className="px-3 py-2 text-xs font-semibold rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 active:scale-95 transition cursor-pointer shrink-0"
           >
             Today
           </button>
@@ -190,24 +193,29 @@ export default function DailyMealLedger({ initialDate, initialRecords, canEdit }
 
         {/* Quick Actions & Save Button */}
         {canEdit && (
-          <div className="flex items-center gap-2 flex-wrap w-full md:w-auto justify-end">
-            <button
-              onClick={() => handleBatchSetAllActive(1)}
-              className="px-3 py-2 text-xs font-medium rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition cursor-pointer"
-            >
-              All Standard (1)
-            </button>
-            <button
-              onClick={() => handleBatchSetAllActive(0)}
-              className="px-3 py-2 text-xs font-medium rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition cursor-pointer"
-            >
-              Reset All (0)
-            </button>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto">
+            <div className="grid grid-cols-2 gap-2 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={() => handleBatchSetAllActive(1)}
+                className="px-3 py-2 text-xs font-semibold rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 transition cursor-pointer active:scale-95 text-center"
+              >
+                All Standard (1)
+              </button>
+              <button
+                type="button"
+                onClick={() => handleBatchSetAllActive(0)}
+                className="px-3 py-2 text-xs font-semibold rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 transition cursor-pointer active:scale-95 text-center"
+              >
+                Reset All (0)
+              </button>
+            </div>
 
             <button
+              type="button"
               onClick={handleSave}
               disabled={saving || loading}
-              className="flex-1 md:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-lg shadow-blue-500/20 transition disabled:opacity-50 cursor-pointer"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-lg shadow-emerald-600/20 active:scale-95 transition disabled:opacity-50 cursor-pointer"
             >
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               Save Day's Ledger
@@ -217,71 +225,71 @@ export default function DailyMealLedger({ initialDate, initialRecords, canEdit }
       </div>
 
       {/* Daily Meal Stats Summary Pills */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4">
         <div className="glass-card rounded-xl p-3 sm:p-4 text-center border border-slate-800/80">
-          <span className="text-[11px] text-slate-400 font-medium uppercase">Breakfast</span>
-          <div className="text-xl font-bold text-amber-400 mt-0.5">{totalBreakfast}</div>
+          <span className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">Breakfast</span>
+          <div className="text-xl font-extrabold text-amber-400 mt-0.5">{totalBreakfast}</div>
         </div>
         <div className="glass-card rounded-xl p-3 sm:p-4 text-center border border-slate-800/80">
-          <span className="text-[11px] text-slate-400 font-medium uppercase">Lunch</span>
-          <div className="text-xl font-bold text-emerald-400 mt-0.5">{totalLunch}</div>
+          <span className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">Lunch</span>
+          <div className="text-xl font-extrabold text-emerald-400 mt-0.5">{totalLunch}</div>
         </div>
         <div className="glass-card rounded-xl p-3 sm:p-4 text-center border border-slate-800/80">
-          <span className="text-[11px] text-slate-400 font-medium uppercase">Dinner</span>
-          <div className="text-xl font-bold text-indigo-400 mt-0.5">{totalDinner}</div>
+          <span className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">Dinner</span>
+          <div className="text-xl font-extrabold text-indigo-400 mt-0.5">{totalDinner}</div>
         </div>
-        <div className="glass-card rounded-xl p-3 sm:p-4 text-center border border-slate-800/80 bg-blue-900/10">
-          <span className="text-[11px] text-blue-400 font-medium uppercase">Total Daily Meals</span>
-          <div className="text-xl font-extrabold text-blue-400 mt-0.5">{totalDayMeals}</div>
+        <div className="glass-card rounded-xl p-3 sm:p-4 text-center border border-emerald-500/30 bg-emerald-950/20">
+          <span className="text-[11px] text-emerald-400 font-semibold uppercase tracking-wider">Total Daily Meals</span>
+          <div className="text-xl font-black text-emerald-400 mt-0.5">{totalDayMeals}</div>
         </div>
       </div>
 
       {/* Native Mobile Stepper Cards View (< md) */}
-      <div className="block md:hidden space-y-3">
+      <div className="block md:hidden space-y-3.5">
         {records.map((r) => (
           <div
             key={r.userId}
-            className="glass-card rounded-2xl p-4 border border-slate-800 space-y-3 shadow-lg"
+            className="glass-card rounded-2xl p-4 border border-slate-800 space-y-3.5 shadow-lg"
           >
             {/* Header: Member info */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-slate-800 text-blue-400 font-bold flex items-center justify-center text-xs border border-slate-700">
+                <div className="w-10 h-10 rounded-full bg-slate-900 text-emerald-400 font-bold flex items-center justify-center text-sm border border-slate-800 shadow-inner">
                   {r.userName.charAt(0).toUpperCase()}
                 </div>
                 <div>
                   <div className="font-bold text-white text-sm leading-tight">{r.userName}</div>
-                  <div className="text-[11px] text-slate-400 truncate max-w-[150px]">{r.userEmail}</div>
+                  <div className="text-[11px] text-slate-400 truncate max-w-[140px]">{r.userEmail}</div>
                 </div>
               </div>
 
-              <span className="font-extrabold text-white bg-blue-600/20 text-blue-400 border border-blue-500/30 px-3 py-1 rounded-full text-xs">
+              <span className="font-extrabold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1 rounded-full text-xs">
                 Total: {r.totalMeals}
               </span>
             </div>
 
             {/* Steppers Grid */}
-            <div className="grid grid-cols-3 gap-2 bg-slate-950/70 p-3 rounded-xl border border-slate-800">
+            <div className="grid grid-cols-3 gap-2 bg-slate-950/80 p-3 rounded-xl border border-slate-800/80">
               
               {/* Breakfast Stepper */}
-              <div className="flex flex-col items-center gap-1">
-                <span className="text-[10px] font-bold text-amber-400 uppercase">Breakfast</span>
+              <div className="flex flex-col items-center gap-1.5">
+                <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider">Breakfast</span>
                 {canEdit ? (
                   <div className="flex items-center gap-1">
                     <button
                       type="button"
                       onClick={() => handleStepMeal(r.userId, "breakfast", -0.5)}
-                      className="w-7 h-7 rounded-lg bg-slate-800 active:bg-slate-700 text-slate-300 flex items-center justify-center font-bold"
+                      className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 flex items-center justify-center font-bold border border-slate-700 transition"
                     >
-                      <Minus className="w-3 h-3" />
+                      <Minus className="w-3.5 h-3.5" />
                     </button>
-                    <span className="w-6 text-center font-extrabold text-amber-400 text-sm">{r.breakfast}</span>
+                    <span className="w-6 text-center font-black text-amber-400 text-sm">{r.breakfast}</span>
                     <button
                       type="button"
                       onClick={() => handleStepMeal(r.userId, "breakfast", 0.5)}
-                      className="w-7 h-7 rounded-lg bg-slate-800 active:bg-slate-700 text-slate-300 flex items-center justify-center font-bold"
+                      className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 flex items-center justify-center font-bold border border-slate-700 transition"
                     >
-                      <Plus className="w-3 h-3" />
+                      <Plus className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 ) : (
@@ -290,24 +298,24 @@ export default function DailyMealLedger({ initialDate, initialRecords, canEdit }
               </div>
 
               {/* Lunch Stepper */}
-              <div className="flex flex-col items-center gap-1">
-                <span className="text-[10px] font-bold text-emerald-400 uppercase">Lunch</span>
+              <div className="flex flex-col items-center gap-1.5">
+                <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Lunch</span>
                 {canEdit ? (
                   <div className="flex items-center gap-1">
                     <button
                       type="button"
                       onClick={() => handleStepMeal(r.userId, "lunch", -0.5)}
-                      className="w-7 h-7 rounded-lg bg-slate-800 active:bg-slate-700 text-slate-300 flex items-center justify-center font-bold"
+                      className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 flex items-center justify-center font-bold border border-slate-700 transition"
                     >
-                      <Minus className="w-3 h-3" />
+                      <Minus className="w-3.5 h-3.5" />
                     </button>
-                    <span className="w-6 text-center font-extrabold text-emerald-400 text-sm">{r.lunch}</span>
+                    <span className="w-6 text-center font-black text-emerald-400 text-sm">{r.lunch}</span>
                     <button
                       type="button"
                       onClick={() => handleStepMeal(r.userId, "lunch", 0.5)}
-                      className="w-7 h-7 rounded-lg bg-slate-800 active:bg-slate-700 text-slate-300 flex items-center justify-center font-bold"
+                      className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 flex items-center justify-center font-bold border border-slate-700 transition"
                     >
-                      <Plus className="w-3 h-3" />
+                      <Plus className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 ) : (
@@ -316,24 +324,24 @@ export default function DailyMealLedger({ initialDate, initialRecords, canEdit }
               </div>
 
               {/* Dinner Stepper */}
-              <div className="flex flex-col items-center gap-1">
-                <span className="text-[10px] font-bold text-indigo-400 uppercase">Dinner</span>
+              <div className="flex flex-col items-center gap-1.5">
+                <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">Dinner</span>
                 {canEdit ? (
                   <div className="flex items-center gap-1">
                     <button
                       type="button"
                       onClick={() => handleStepMeal(r.userId, "dinner", -0.5)}
-                      className="w-7 h-7 rounded-lg bg-slate-800 active:bg-slate-700 text-slate-300 flex items-center justify-center font-bold"
+                      className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 flex items-center justify-center font-bold border border-slate-700 transition"
                     >
-                      <Minus className="w-3 h-3" />
+                      <Minus className="w-3.5 h-3.5" />
                     </button>
-                    <span className="w-6 text-center font-extrabold text-indigo-400 text-sm">{r.dinner}</span>
+                    <span className="w-6 text-center font-black text-indigo-400 text-sm">{r.dinner}</span>
                     <button
                       type="button"
                       onClick={() => handleStepMeal(r.userId, "dinner", 0.5)}
-                      className="w-7 h-7 rounded-lg bg-slate-800 active:bg-slate-700 text-slate-300 flex items-center justify-center font-bold"
+                      className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 flex items-center justify-center font-bold border border-slate-700 transition"
                     >
-                      <Plus className="w-3 h-3" />
+                      <Plus className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 ) : (
@@ -345,18 +353,18 @@ export default function DailyMealLedger({ initialDate, initialRecords, canEdit }
 
             {/* Quick Set buttons for user */}
             {canEdit && (
-              <div className="flex items-center justify-end gap-2 text-xs">
+              <div className="flex items-center justify-end gap-2 text-xs pt-1">
                 <button
                   type="button"
                   onClick={() => handleSetAllForUser(r.userId, 1)}
-                  className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition"
+                  className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 font-medium border border-slate-700 transition cursor-pointer"
                 >
                   1 each
                 </button>
                 <button
                   type="button"
                   onClick={() => handleSetAllForUser(r.userId, 0)}
-                  className="px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 transition"
+                  className="px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 active:scale-95 text-rose-400 font-medium border border-rose-500/20 transition cursor-pointer"
                 >
                   Off
                 </button>
