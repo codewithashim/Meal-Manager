@@ -11,6 +11,7 @@ interface ExpenseClientPageProps {
   initialTotal: number;
   initialMonth: string;
   currentUserRole: string;
+  currentUserId?: string;
 }
 
 export default function ExpenseClientPage({
@@ -18,6 +19,7 @@ export default function ExpenseClientPage({
   initialTotal,
   initialMonth,
   currentUserRole,
+  currentUserId,
 }: ExpenseClientPageProps) {
   const [expenses, setExpenses] = useState<any[]>(initialExpenses);
   const [totalAmount, setTotalAmount] = useState<number>(initialTotal);
@@ -30,6 +32,12 @@ export default function ExpenseClientPage({
   const [isPending, startTransition] = useTransition();
 
   const canManage = currentUserRole === "ADMIN" || currentUserRole === "MANAGER";
+
+  const canDeleteExpense = (createdBy: string) => {
+    if (canManage) return true;
+    if (currentUserId && createdBy === currentUserId) return true;
+    return false;
+  };
 
   const handleRefresh = async () => {
     startTransition(async () => {
@@ -235,7 +243,7 @@ export default function ExpenseClientPage({
                   </span>
                 </div>
 
-                {canManage && (
+                {canDeleteExpense(e.createdBy) && (
                   <button
                     onClick={() => handleDelete(e.id, e.title)}
                     disabled={deletingId === e.id}
@@ -262,7 +270,7 @@ export default function ExpenseClientPage({
                 <th className="px-6 py-4">Logged By</th>
                 <th className="px-6 py-4">Date</th>
                 <th className="px-6 py-4 text-right">Amount</th>
-                {canManage && <th className="px-6 py-4 text-right">Actions</th>}
+                <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60">
@@ -295,8 +303,8 @@ export default function ExpenseClientPage({
                       ৳{e.amount.toLocaleString()}
                     </td>
 
-                    {canManage && (
-                      <td className="px-6 py-4 text-right">
+                    <td className="px-6 py-4 text-right">
+                      {canDeleteExpense(e.createdBy) && (
                         <button
                           onClick={() => handleDelete(e.id, e.title)}
                           disabled={deletingId === e.id}
@@ -305,8 +313,8 @@ export default function ExpenseClientPage({
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
-                      </td>
-                    )}
+                      )}
+                    </td>
 
                   </tr>
                 ))

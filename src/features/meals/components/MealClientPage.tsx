@@ -59,31 +59,27 @@ export default function MealClientPage({
           <Grid className="w-4 h-4" /> Calendar View
         </button>
 
-        {isManagerOrAdmin && (
-          <>
-            <button
-              onClick={() => setActiveTab("DAILY")}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer ${
-                activeTab === "DAILY"
-                  ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-600/20"
-                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
-              }`}
-            >
-              <Calendar className="w-4 h-4" /> Daily Ledger
-            </button>
+        <button
+          onClick={() => setActiveTab("DAILY")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer ${
+            activeTab === "DAILY"
+              ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-600/20"
+              : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
+          }`}
+        >
+          <Calendar className="w-4 h-4" /> Daily Ledger
+        </button>
 
-            <button
-              onClick={() => setActiveTab("MONTHLY")}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer ${
-                activeTab === "MONTHLY"
-                  ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-600/20"
-                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
-              }`}
-            >
-              <FileSpreadsheet className="w-4 h-4" /> Monthly Summary
-            </button>
-          </>
-        )}
+        <button
+          onClick={() => setActiveTab("MONTHLY")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer ${
+            activeTab === "MONTHLY"
+              ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-600/20"
+              : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
+          }`}
+        >
+          <FileSpreadsheet className="w-4 h-4" /> Monthly Summary
+        </button>
 
         <button
           onClick={() => setActiveTab("MY_MEALS")}
@@ -110,7 +106,7 @@ export default function MealClientPage({
         <DailyMealLedger
           initialDate={initialDate}
           initialRecords={initialDailyData.records}
-          canEdit={isManagerOrAdmin}
+          canEdit={true}
         />
       )}
 

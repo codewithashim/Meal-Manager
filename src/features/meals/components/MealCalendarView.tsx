@@ -400,7 +400,7 @@ export default function MealCalendarView({
                     {/* Footer Action Hint */}
                     <div className="text-[9px] text-slate-500 group-hover:text-slate-300 flex items-center justify-between pt-1 border-t border-slate-800/40">
                       <span>{dayRecords.length > 0 ? `${dayRecords.length} users` : "Off"}</span>
-                      {isManagerOrAdmin && <Edit3 className="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 text-emerald-400" />}
+                      <Edit3 className="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 text-emerald-400" />
                     </div>
 
                   </div>
@@ -435,9 +435,7 @@ export default function MealCalendarView({
                     Daily Meal Inspector: {selectedDayDate}
                   </h3>
                   <p className="text-xs text-slate-400">
-                    {isManagerOrAdmin
-                      ? "View or update Breakfast, Lunch & Dinner counts for mess members."
-                      : "Meal record details for this date."}
+                    View or update Breakfast, Lunch & Dinner counts for mess members.
                   </p>
                 </div>
               </div>
@@ -476,7 +474,6 @@ export default function MealCalendarView({
                         step="0.5"
                         min="0"
                         max="5"
-                        disabled={!isManagerOrAdmin}
                         value={item.breakfast}
                         onChange={(e) => {
                           const val = parseFloat(e.target.value) || 0;
@@ -485,7 +482,7 @@ export default function MealCalendarView({
                           next[idx].totalMeals = val + next[idx].lunch + next[idx].dinner;
                           setDayInspectRecords(next);
                         }}
-                        className="w-14 px-2 py-1 bg-slate-900 border border-slate-700/80 rounded-lg text-center text-xs font-bold text-white focus:outline-none focus:border-emerald-500 disabled:opacity-75"
+                        className="w-14 px-2 py-1 bg-slate-900 border border-slate-700/80 rounded-lg text-center text-xs font-bold text-white focus:outline-none focus:border-emerald-500"
                       />
                     </div>
 
@@ -499,7 +496,6 @@ export default function MealCalendarView({
                         step="0.5"
                         min="0"
                         max="5"
-                        disabled={!isManagerOrAdmin}
                         value={item.lunch}
                         onChange={(e) => {
                           const val = parseFloat(e.target.value) || 0;
@@ -508,7 +504,7 @@ export default function MealCalendarView({
                           next[idx].totalMeals = next[idx].breakfast + val + next[idx].dinner;
                           setDayInspectRecords(next);
                         }}
-                        className="w-14 px-2 py-1 bg-slate-900 border border-slate-700/80 rounded-lg text-center text-xs font-bold text-white focus:outline-none focus:border-emerald-500 disabled:opacity-75"
+                        className="w-14 px-2 py-1 bg-slate-900 border border-slate-700/80 rounded-lg text-center text-xs font-bold text-white focus:outline-none focus:border-emerald-500"
                       />
                     </div>
 
@@ -522,7 +518,6 @@ export default function MealCalendarView({
                         step="0.5"
                         min="0"
                         max="5"
-                        disabled={!isManagerOrAdmin}
                         value={item.dinner}
                         onChange={(e) => {
                           const val = parseFloat(e.target.value) || 0;
@@ -531,7 +526,7 @@ export default function MealCalendarView({
                           next[idx].totalMeals = next[idx].breakfast + next[idx].lunch + val;
                           setDayInspectRecords(next);
                         }}
-                        className="w-14 px-2 py-1 bg-slate-900 border border-slate-700/80 rounded-lg text-center text-xs font-bold text-white focus:outline-none focus:border-emerald-500 disabled:opacity-75"
+                        className="w-14 px-2 py-1 bg-slate-900 border border-slate-700/80 rounded-lg text-center text-xs font-bold text-white focus:outline-none focus:border-emerald-500"
                       />
                     </div>
 
@@ -549,17 +544,15 @@ export default function MealCalendarView({
               >
                 Close
               </button>
-              {isManagerOrAdmin && (
-                <button
-                  type="button"
-                  onClick={handleSaveDayEdits}
-                  disabled={saving}
-                  className="flex items-center gap-2 px-5 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 rounded-xl shadow-lg shadow-emerald-600/25 transition disabled:opacity-50 cursor-pointer"
-                >
-                  {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  Save Changes
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={handleSaveDayEdits}
+                disabled={saving}
+                className="flex items-center gap-2 px-5 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 rounded-xl shadow-lg shadow-emerald-600/25 transition disabled:opacity-50 cursor-pointer"
+              >
+                {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                Save Changes
+              </button>
             </div>
 
           </div>

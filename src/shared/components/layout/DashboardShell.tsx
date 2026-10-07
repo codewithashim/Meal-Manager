@@ -6,6 +6,7 @@ import { DashboardSidebar } from "@/shared/components/layout/sidebar";
 import { DashboardTopbar } from "@/shared/components/layout/topbar";
 import { MobileDrawer } from "@/shared/components/layout/MobileDrawer";
 import { BottomNav } from "@/shared/components/layout/BottomNav";
+import { hasPermission, Resource } from "@/lib/permissions";
 import {
   LayoutDashboard,
   Users,
@@ -17,7 +18,6 @@ import {
   MessageSquareWarning,
   Bell,
   Megaphone,
-  ShieldCheck,
   KeyRound,
 } from "lucide-react";
 
@@ -28,6 +28,27 @@ interface DashboardShellProps {
   children: React.ReactNode;
 }
 
+interface NavItem {
+  name: string;
+  href: string;
+  icon: any;
+  resource?: Resource;
+}
+
+const ALL_NAV_ITEMS: NavItem[] = [
+  { name: "Overview Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Daily Meals & Log", href: "/meals", icon: UtensilsCrossed, resource: "MEALS" },
+  { name: "Bazaar & Mess Expenses", href: "/expenses", icon: Receipt, resource: "EXPENSES" },
+  { name: "Monthly Bills & Invoices", href: "/bills", icon: FileSpreadsheet, resource: "BILLS" },
+  { name: "Payment Collections", href: "/payments", icon: Wallet, resource: "PAYMENTS" },
+  { name: "Mess Members Directory", href: "/users", icon: Users, resource: "USERS" },
+  { name: "Rooms & Seat Allocations", href: "/rooms", icon: BedDouble, resource: "ROOMS" },
+  { name: "Service Desk & Complaints", href: "/complaints", icon: MessageSquareWarning, resource: "COMPLAINTS" },
+  { name: "Notice Board", href: "/notices", icon: Megaphone, resource: "NOTICES" },
+  { name: "Security & Audit Logs", href: "/audit-logs", icon: KeyRound, resource: "AUDIT_LOGS" },
+  { name: "Notifications", href: "/notifications", icon: Bell },
+];
+
 export function DashboardShell({
   role,
   userName,
@@ -36,64 +57,11 @@ export function DashboardShell({
 }: DashboardShellProps) {
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
 
-  const adminNav = [
-    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Members", href: "/users", icon: Users },
-    { name: "Access & Audit Logs", href: "/audit-logs", icon: KeyRound },
-    { name: "Rooms & Seats", href: "/rooms", icon: BedDouble },
-    { name: "Meal Ledger", href: "/meals", icon: UtensilsCrossed },
-    { name: "Expenses", href: "/expenses", icon: Receipt },
-    { name: "Payments", href: "/payments", icon: Wallet },
-    { name: "Monthly Bills", href: "/bills", icon: FileSpreadsheet },
-    { name: "Complaints", href: "/complaints", icon: MessageSquareWarning },
-    { name: "Notices", href: "/notices", icon: Megaphone },
-    { name: "Notifications", href: "/notifications", icon: Bell },
-  ];
-
-  const managerNav = [
-    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Members", href: "/users", icon: Users },
-    { name: "Rooms & Seats", href: "/rooms", icon: BedDouble },
-    { name: "Meal Ledger", href: "/meals", icon: UtensilsCrossed },
-    { name: "Expenses", href: "/expenses", icon: Receipt },
-    { name: "Payments", href: "/payments", icon: Wallet },
-    { name: "Monthly Bills", href: "/bills", icon: FileSpreadsheet },
-    { name: "Complaints", href: "/complaints", icon: MessageSquareWarning },
-    { name: "Notices", href: "/notices", icon: Megaphone },
-    { name: "Notifications", href: "/notifications", icon: Bell },
-  ];
-
-  const userNav = [
-    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "My Meals", href: "/meals", icon: UtensilsCrossed },
-    { name: "My Bill & Dues", href: "/bills", icon: FileSpreadsheet },
-    { name: "My Payments", href: "/payments", icon: Wallet },
-    { name: "My Complaints", href: "/complaints", icon: MessageSquareWarning },
-    { name: "Notice Board", href: "/notices", icon: Megaphone },
-    { name: "Notifications", href: "/notifications", icon: Bell },
-  ];
-
-  if (role === Role.USER && permissions.length > 0) {
-    if (permissions.includes("EXPENSES") && !userNav.some((i) => i.href === "/expenses")) {
-      userNav.push({ name: "Expenses", href: "/expenses", icon: Receipt });
-    }
-    if (permissions.includes("ROOMS") && !userNav.some((i) => i.href === "/rooms")) {
-      userNav.push({ name: "Rooms & Seats", href: "/rooms", icon: BedDouble });
-    }
-    if (permissions.includes("USERS") && !userNav.some((i) => i.href === "/users")) {
-      userNav.push({ name: "Members", href: "/users", icon: Users });
-    }
-    if (permissions.includes("AUDIT_LOGS") && !userNav.some((i) => i.href === "/audit-logs")) {
-      userNav.push({ name: "Audit Logs", href: "/audit-logs", icon: ShieldCheck });
-    }
-  }
-
-  const navItems =
-    role === Role.ADMIN
-      ? adminNav
-      : role === Role.MANAGER
-      ? managerNav
-      : userNav;
+  // Single permission-filtered navbar
+  const navItems = ALL_NAV_ITEMS.filter((item) => {
+    if (!item.resource) return true;
+    return hasPermission(role, item.resource, "READ", permissions);
+  });
 
   return (
     <div className="min-h-screen bg-[#0b0f19] text-slate-100 flex flex-col lg:flex-row">

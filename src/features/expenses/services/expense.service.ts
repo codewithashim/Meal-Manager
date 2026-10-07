@@ -107,6 +107,10 @@ export class ExpenseService {
     const expense = await db.expense.findUnique({ where: { id } });
     if (!expense) return { error: "Expense not found." };
 
+    if (actorRole === Role.USER && expense.createdBy !== actorId) {
+      return { error: "Forbidden: You can only delete your own logged bazaar/expenses." };
+    }
+
     await db.expense.delete({ where: { id } });
 
     await AuditService.logActivity({

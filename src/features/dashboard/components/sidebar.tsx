@@ -3,18 +3,17 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Role } from "@prisma/client";
+import { hasPermission, Resource } from "@/lib/permissions";
 import {
   LayoutDashboard,
   Users,
   BedDouble,
   UtensilsCrossed,
-  Receipt,
   Wallet,
   FileSpreadsheet,
   MessageSquareWarning,
   Bell,
   Megaphone,
-  ShieldCheck,
   KeyRound,
   ShoppingCart,
 } from "lucide-react";
@@ -25,54 +24,35 @@ interface SidebarProps {
   permissions?: string[];
 }
 
+interface NavItem {
+  name: string;
+  href: string;
+  icon: any;
+  resource?: Resource;
+}
+
+const ALL_NAV_ITEMS: NavItem[] = [
+  { name: "Overview Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Daily Meals & Log", href: "/meals", icon: UtensilsCrossed, resource: "MEALS" },
+  { name: "Bazaar & Mess Expenses", href: "/expenses", icon: ShoppingCart, resource: "EXPENSES" },
+  { name: "Monthly Bills & Invoices", href: "/bills", icon: FileSpreadsheet, resource: "BILLS" },
+  { name: "Payment Collections", href: "/payments", icon: Wallet, resource: "PAYMENTS" },
+  { name: "Mess Members Directory", href: "/users", icon: Users, resource: "USERS" },
+  { name: "Rooms & Seat Allocations", href: "/rooms", icon: BedDouble, resource: "ROOMS" },
+  { name: "Service Desk & Complaints", href: "/complaints", icon: MessageSquareWarning, resource: "COMPLAINTS" },
+  { name: "Notice Board", href: "/notices", icon: Megaphone, resource: "NOTICES" },
+  { name: "Security & Audit Logs", href: "/audit-logs", icon: KeyRound, resource: "AUDIT_LOGS" },
+  { name: "Notifications", href: "/notifications", icon: Bell },
+];
+
 export function DashboardSidebar({ role, userName, permissions = [] }: SidebarProps) {
   const pathname = usePathname();
 
-  const adminNav = [
-    { name: "Overview & Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Mess Members Directory", href: "/users", icon: Users },
-    { name: "Rooms & Seat Allocations", href: "/rooms", icon: BedDouble },
-    { name: "Daily Meals & Log", href: "/meals", icon: UtensilsCrossed },
-    { name: "Bazaar & Mess Expenses", href: "/expenses", icon: ShoppingCart },
-    { name: "Monthly Bills & Invoices", href: "/bills", icon: FileSpreadsheet },
-    { name: "Payment Collections", href: "/payments", icon: Wallet },
-    { name: "Service Desk & Complaints", href: "/complaints", icon: MessageSquareWarning },
-    { name: "Notice Board", href: "/notices", icon: Megaphone },
-    { name: "Security & Audit Logs", href: "/audit-logs", icon: KeyRound },
-    { name: "Notifications", href: "/notifications", icon: Bell },
-  ];
-
-  const managerNav = [
-    { name: "Overview & Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Mess Members Directory", href: "/users", icon: Users },
-    { name: "Rooms & Seat Allocations", href: "/rooms", icon: BedDouble },
-    { name: "Daily Meals & Log", href: "/meals", icon: UtensilsCrossed },
-    { name: "Bazaar & Mess Expenses", href: "/expenses", icon: ShoppingCart },
-    { name: "Monthly Bills & Invoices", href: "/bills", icon: FileSpreadsheet },
-    { name: "Payment Collections", href: "/payments", icon: Wallet },
-    { name: "Service Desk & Complaints", href: "/complaints", icon: MessageSquareWarning },
-    { name: "Notice Board", href: "/notices", icon: Megaphone },
-    { name: "Notifications", href: "/notifications", icon: Bell },
-  ];
-
-  // Easy menu names for regular mess members (Every user can access Meals, Expenses/Bazaar, Bills, Payments)
-  const userNav = [
-    { name: "Overview & Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Daily Meals & Log", href: "/meals", icon: UtensilsCrossed },
-    { name: "Bazaar & Mess Expenses", href: "/expenses", icon: ShoppingCart },
-    { name: "Monthly Bills & Invoices", href: "/bills", icon: FileSpreadsheet },
-    { name: "Payments & Receipts", href: "/payments", icon: Wallet },
-    { name: "Service Desk & Complaints", href: "/complaints", icon: MessageSquareWarning },
-    { name: "Notice Board", href: "/notices", icon: Megaphone },
-    { name: "Notifications", href: "/notifications", icon: Bell },
-  ];
-
-  const navItems =
-    role === Role.ADMIN
-      ? adminNav
-      : role === Role.MANAGER
-      ? managerNav
-      : userNav;
+  // Filter single navbar based on RBAC & user permissions
+  const navItems = ALL_NAV_ITEMS.filter((item) => {
+    if (!item.resource) return true;
+    return hasPermission(role, item.resource, "READ", permissions);
+  });
 
   return (
     <aside className="w-64 bg-slate-900 border-r border-slate-800 h-screen sticky top-0 flex flex-col justify-between p-4 shrink-0">

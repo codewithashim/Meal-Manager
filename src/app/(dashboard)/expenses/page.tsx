@@ -24,6 +24,7 @@ export default async function ExpensesPage() {
       initialTotal={totalAmount}
       initialMonth={currentMonthStr}
       currentUserRole={session.user.role}
+      currentUserId={session.user.id}
     />
   );
 }
