@@ -1,0 +1,309 @@
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  USER
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum RoomStatus {
+  AVAILABLE
+  FULL
+  MAINTENANCE
+}
+
+enum SeatStatus {
+  VACANT
+  OCCUPIED
+  RESERVED
+}
+
+enum ExpenseCategory {
+  FOOD
+  GAS
+  ELECTRICITY
+  WATER
+  INTERNET
+  RENT
+  MAINTENANCE
+  CLEANING
+  STAFF_SALARY
+  OTHER
+}
+
+enum PaymentMethod {
+  CASH
+  BANK
+  BKASH
+  NAGAD
+  OTHER
+}
+
+enum BillStatus {
+  UNPAID
+  PARTIALLY_PAID
+  PAID
+  OVERDUE
+}
+
+enum ComplaintCategory {
+  MAINTENANCE
+  ELECTRICITY
+  WATER
+  INTERNET
+  CLEANING
+  FOOD
+  ROOM
+  OTHER
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum ComplaintStatus {
+  PENDING
+  IN_PROGRESS
+  RESOLVED
+  REJECTED
+}
+
+enum NotificationType {
+  SYSTEM
+  PAYMENT
+  BILL
+  NOTICE
+  COMPLAINT
+  MEAL
+}
+
+model User {
+  id               String           @id @default(auto()) @map("_id") @db.ObjectId
+  name             String
+  email            String           @unique
+  phone            String?
+  passwordHash     String
+  profileImage     String?
+  role             Role             @default(USER)
+  status           UserStatus       @default(ACTIVE)
+  permissions      String[]         @default([])
+
+  // Member Specific Metadata
+  nidNumber        String?
+  emergencyContact String?
+  address          String?
+  occupation       String?
+  joiningDate      DateTime         @default(now())
+  leavingDate      DateTime?
+  monthlyRent      Float            @default(0.0)
+  mealStatus       Boolean          @default(true)
+
+  // Relations
+  roomAssignments  RoomAssignment[]
+  mealRecords      MealRecord[]
+  payments         Payment[]
+  bills            MonthlyBill[]
+  complaints       Complaint[]
+  noticesCreated   Notice[]         @relation("NoticeCreator")
+  notifications    Notification[]
+  auditLogs        AuditLog[]       @relation("AuditActor")
+
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+}
+
+model Room {
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  floor       Int        @default(1)
+  capacity    Int        @default(2)
+  status      RoomStatus @default(AVAILABLE)
+
+  seats       Seat[]
+
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Seat {
+  id              String           @id @default(auto()) @map("_id") @db.ObjectId
+  roomId          String           @db.ObjectId
+  room            Room             @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  seatNumber      String
+  status          SeatStatus       @default(VACANT)
+
+  roomAssignments RoomAssignment[]
+
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@unique([roomId, seatNumber])
+}
+
+model RoomAssignment {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String    @db.ObjectId
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  seatId    String    @db.ObjectId
+  seat      Seat      @relation(fields: [seatId], references: [id], onDelete: Cascade)
+  startDate DateTime  @default(now())
+  endDate   DateTime?
+  isActive  Boolean   @default(true)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model MealRecord {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId     String   @db.ObjectId
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date       DateTime @db.Date
+  breakfast  Float    @default(0)
+  lunch      Float    @default(0)
+  dinner     Float    @default(0)
+  totalMeals Float    @default(0)
+  note       String?
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([userId, date])
+}
+
+model Expense {
+  id          String          @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  category    ExpenseCategory
+  amount      Float
+  date        DateTime        @db.Date
+  description String?
+  receiptUrl  String?
+  createdBy   String
+
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+model Payment {
+  id            String        @id @default(auto()) @map("_id") @db.ObjectId
+  userId        String        @db.ObjectId
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount        Float
+  date          DateTime      @db.Date
+  month         String
+  paymentMethod PaymentMethod @default(CASH)
+  transactionId String?
+  note          String?
+  recordedBy    String
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model MonthlyBill {
+  id           String     @id @default(auto()) @map("_id") @db.ObjectId
+  userId       String     @db.ObjectId
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  month        String
+  totalMeals   Float      @default(0)
+  mealRate     Float      @default(0)
+  mealCost     Float      @default(0)
+  roomRent     Float      @default(0)
+  utilityShare Float      @default(0)
+  otherCharges Float      @default(0)
+  totalBill    Float      @default(0)
+  totalPaid    Float      @default(0)
+  dueAmount    Float      @default(0)
+  status       BillStatus @default(UNPAID)
+
+  generatedAt  DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([userId, month])
+}
+
+model Complaint {
+  id          String            @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String            @db.ObjectId
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  category    ComplaintCategory
+  description String
+  priority    Priority          @default(MEDIUM)
+  status      ComplaintStatus   @default(PENDING)
+  adminNote   String?
+
+  resolvedAt  DateTime?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+model Notice {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String
+  priority    Priority  @default(MEDIUM)
+  publishDate DateTime  @default(now())
+  expiryDate  DateTime?
+  createdById String    @db.ObjectId
+  createdBy   User      @relation("NoticeCreator", fields: [createdById], references: [id])
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Notification {
+  id        String           @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String           @db.ObjectId
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  type      NotificationType @default(SYSTEM)
+  read      Boolean          @default(false)
+
+  createdAt DateTime         @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  actorId   String   @db.ObjectId
+  actor     User     @relation("AuditActor", fields: [actorId], references: [id])
+  action    String
+  entity    String
+  entityId  String
+  details   String?
+  ipAddress String?
+
+  timestamp DateTime @default(now())
+}
+
+model SystemSetting {
+  id             String   @id @default("default") @map("_id")
+  messName       String   @default("My Boarding Mess")
+  address        String?
+  phone          String?
+  email          String?
+  currency       String   @default("BDT")
+  currencySymbol String   @default("৳")
+  timezone       String   @default("Asia/Dhaka")
+  dateFormat     String   @default("yyyy-MM-dd")
+
+  updatedAt      DateTime @updatedAt
+}
