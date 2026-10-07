@@ -92,3 +92,39 @@ body {
 .animate-slideLeft {
   animation: slideLeft 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.animate-slideUp {
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Print Stylesheet for PDF Generation */
+@media print {
+  nav, sidebar, header, aside, .print\:hidden {
+    display: none !important;
+  }
+  
+  body {
+    background: white !important;
+    background-image: none !important;
+    color: black !important;
+  }
+
+  .glass-card, .glass-drawer {
+    background: white !important;
+    backdrop-filter: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: black !important;
+  }
+
+  @page {
+    margin: 12mm;
+    size: auto;
+  }
+}
+

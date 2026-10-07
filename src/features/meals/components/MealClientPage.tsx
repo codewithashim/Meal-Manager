@@ -29,28 +29,28 @@ export default function MealClientPage({
   const [activeTab, setActiveTab] = useState<"CALENDAR" | "DAILY" | "MONTHLY" | "MY_MEALS">("CALENDAR");
 
   return (
-    <div className="space-y-6 animate-fadeIn">
+    <div className="space-y-4 sm:space-y-6 animate-fadeIn">
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
-            <UtensilsCrossed className="w-7 h-7 text-emerald-400" />
+          <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight flex items-center gap-2">
+            <UtensilsCrossed className="w-6 h-6 sm:w-7 sm:h-7 text-emerald-400" />
             Meal Ledger & Interactive Calendar
           </h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-xs sm:text-sm text-slate-400 mt-1">
             Track daily meal counts, view interactive monthly calendars, and monitor mess meal rates.
           </p>
         </div>
       </div>
 
-      {/* Navigation Tabs */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-slate-800 pb-3">
+      {/* Navigation Tabs (Touch-friendly & horizontal scrollable on mobile) */}
+      <div className="flex items-center gap-2 border-b border-slate-800 pb-3 overflow-x-auto no-scrollbar whitespace-nowrap">
         
         {/* Interactive Calendar Tab */}
         <button
           onClick={() => setActiveTab("CALENDAR")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer shrink-0 ${
             activeTab === "CALENDAR"
               ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-600/20"
               : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
@@ -61,7 +61,7 @@ export default function MealClientPage({
 
         <button
           onClick={() => setActiveTab("DAILY")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer shrink-0 ${
             activeTab === "DAILY"
               ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-600/20"
               : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
@@ -72,7 +72,7 @@ export default function MealClientPage({
 
         <button
           onClick={() => setActiveTab("MONTHLY")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer shrink-0 ${
             activeTab === "MONTHLY"
               ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-600/20"
               : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
@@ -83,7 +83,7 @@ export default function MealClientPage({
 
         <button
           onClick={() => setActiveTab("MY_MEALS")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer shrink-0 ${
             activeTab === "MY_MEALS"
               ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-600/20"
               : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
