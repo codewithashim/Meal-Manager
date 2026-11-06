@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { mealDateSchema, mealMonthSchema } from "@/lib/validations/meal";
 
 export const expenseCategories = [
   "FOOD",
@@ -14,14 +15,17 @@ export const expenseCategories = [
 ] as const;
 
 export const createExpenseSchema = z.object({
-  title: z.string().min(2, "Title must be at least 2 characters"),
+  title: z.string().trim().min(2, "Title must be at least 2 characters"),
   category: z.enum(expenseCategories),
   amount: z.number().positive("Amount must be greater than 0"),
-  date: z.string(), // YYYY-MM-DD
+  date: mealDateSchema,
   description: z.string().optional().nullable(),
 });
 
 export type CreateExpenseInput = z.infer<typeof createExpenseSchema>;
+export const expenseMonthSchema = mealMonthSchema;
+export const expenseCategoryFilterSchema = z.union([z.literal("ALL"), z.enum(expenseCategories)]);
+export const expenseIdSchema = z.string().regex(/^[0-9a-f]{24}$/i, "Invalid expense ID.");
 
 export const generateBillsSchema = z.object({
   month: z.string(), // YYYY-MM

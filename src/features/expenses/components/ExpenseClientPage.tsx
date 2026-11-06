@@ -1,17 +1,19 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useCallback, useRef, useState, useTransition } from "react";
 import ExpenseModal from "@/features/expenses/components/ExpenseModal";
 import { Receipt, Plus, Search, Calendar, Filter, Trash2, ShoppingCart, Zap, Wifi, Home, Wrench } from "lucide-react";
 import { getExpenses, deleteExpense } from "@/server/actions/billingActions";
 import { toast } from "sonner";
 
 interface ExpenseClientPageProps {
-  initialExpenses: any[];
+  initialExpenses: Awaited<ReturnType<typeof getExpenses>>["expenses"];
   initialTotal: number;
   initialMonth: string;
   currentUserRole: string;
   currentUserId?: string;
+  canCreate: boolean;
+  canDelete: boolean;
 }
 
 export default function ExpenseClientPage({
@@ -20,49 +22,64 @@ export default function ExpenseClientPage({
   initialMonth,
   currentUserRole,
   currentUserId,
+  canCreate,
+  canDelete,
 }: ExpenseClientPageProps) {
-  const [expenses, setExpenses] = useState<any[]>(initialExpenses);
+  const [expenses, setExpenses] = useState(initialExpenses);
   const [totalAmount, setTotalAmount] = useState<number>(initialTotal);
   const [selectedMonth, setSelectedMonth] = useState(initialMonth);
   const [categoryFilter, setCategoryFilter] = useState("ALL");
   const [search, setSearch] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState(false);
+  const requestId = useRef(0);
+  const filters = useRef({ month: initialMonth, category: "ALL" });
 
   const [isPending, startTransition] = useTransition();
+  const closeModal = useCallback(() => setIsModalOpen(false), []);
 
   const canManage = currentUserRole === "ADMIN" || currentUserRole === "MANAGER";
 
   const canDeleteExpense = (createdBy: string) => {
+    if (!canDelete) return false;
     if (canManage) return true;
     if (currentUserId && createdBy === currentUserId) return true;
     return false;
   };
 
-  const handleRefresh = async () => {
+  const fetchExpenses = (month: string, category: string) => {
+    const request = ++requestId.current;
+    setLoadError(false);
     startTransition(async () => {
-      const res = await getExpenses(selectedMonth, categoryFilter);
-      setExpenses(res.expenses);
-      setTotalAmount(res.totalAmount);
+      try {
+        const res = await getExpenses(month, category);
+        if (request === requestId.current) {
+          setExpenses(res.expenses);
+          setTotalAmount(res.totalAmount);
+        }
+      } catch {
+        if (request === requestId.current) {
+          setLoadError(true);
+          toast.error("Could not load expenses. Please try again.");
+        }
+      }
     });
   };
 
+  const handleRefresh = () => fetchExpenses(filters.current.month, filters.current.category);
+
   const handleMonthChange = (monthStr: string) => {
+    if (!monthStr) return;
+    filters.current.month = monthStr;
     setSelectedMonth(monthStr);
-    startTransition(async () => {
-      const res = await getExpenses(monthStr, categoryFilter);
-      setExpenses(res.expenses);
-      setTotalAmount(res.totalAmount);
-    });
+    fetchExpenses(monthStr, categoryFilter);
   };
 
   const handleCategoryChange = (catStr: string) => {
+    filters.current.category = catStr;
     setCategoryFilter(catStr);
-    startTransition(async () => {
-      const res = await getExpenses(selectedMonth, catStr);
-      setExpenses(res.expenses);
-      setTotalAmount(res.totalAmount);
-    });
+    fetchExpenses(selectedMonth, catStr);
   };
 
   const handleDelete = async (id: string, title: string) => {
@@ -77,7 +94,7 @@ export default function ExpenseClientPage({
         toast.success(`Deleted expense.`);
         handleRefresh();
       }
-    } catch (err: any) {
+    } catch {
       toast.error("Failed to delete expense.");
     } finally {
       setDeletingId(null);
@@ -140,20 +157,20 @@ export default function ExpenseClientPage({
           </p>
         </div>
 
-        <button
+        {canCreate && <button
           onClick={() => setIsModalOpen(true)}
           className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-xs sm:text-sm bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-lg shadow-emerald-500/20 active:scale-95 transition cursor-pointer"
         >
-          <Plus className="w-4 h-4" /> + Log Bazaar / Expense
-        </button>
+          <Plus className="w-4 h-4" /> Log Bazaar / Expense
+        </button>}
       </div>
 
       {/* Total Expense Summary Card */}
       <div className="glass-card glass-card-hover rounded-2xl p-5 sm:p-6 border border-slate-800 flex items-center justify-between">
         <div>
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Month Expenses ({selectedMonth})</span>
-          <div className="text-2xl sm:text-3xl font-extrabold text-emerald-400 mt-1">৳{totalAmount.toLocaleString()}</div>
-          <p className="text-xs text-slate-400 mt-1">Total recorded costs & food bazaar for selected month</p>
+          <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Expenses ({selectedMonth})</span>
+          <div className="text-2xl sm:text-3xl font-extrabold text-emerald-400 mt-1">{isPending ? "Loading..." : loadError ? "Unavailable" : `৳${totalAmount.toLocaleString()}`}</div>
+          <p className="text-xs text-slate-400 mt-1">Total for the selected month and category; title search does not change this total.</p>
         </div>
 
         <div className="p-3 sm:p-4 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
@@ -169,6 +186,7 @@ export default function ExpenseClientPage({
           <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-500" />
           <input
             type="text"
+            aria-label="Search expense title"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search expense title..."
@@ -177,12 +195,13 @@ export default function ExpenseClientPage({
         </div>
 
         {/* Month Picker & Category Filter */}
-        <div className="flex items-center gap-2 sm:gap-3 w-full md:w-auto">
+        <div className="flex flex-col min-[400px]:flex-row items-stretch gap-2 sm:gap-3 w-full md:w-auto">
           
           <div className="relative flex-1 sm:flex-initial flex items-center gap-2 bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-1.5 text-xs sm:text-sm text-white">
             <Calendar className="w-4 h-4 text-emerald-400 shrink-0" />
             <input
               type="month"
+              aria-label="Expense month"
               value={selectedMonth}
               onChange={(e) => handleMonthChange(e.target.value)}
               className="bg-transparent font-medium focus:outline-none cursor-pointer w-full"
@@ -192,6 +211,7 @@ export default function ExpenseClientPage({
           <div className="flex-1 sm:flex-initial flex items-center gap-2 bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-1.5 text-xs sm:text-sm text-slate-300">
             <Filter className="w-4 h-4 text-slate-400 shrink-0" />
             <select
+              aria-label="Expense category"
               value={categoryFilter}
               onChange={(e) => handleCategoryChange(e.target.value)}
               className="bg-transparent text-white focus:outline-none cursor-pointer w-full"
@@ -214,17 +234,25 @@ export default function ExpenseClientPage({
 
       </div>
 
+      {isPending ? (
+        <div role="status" className="glass-card rounded-2xl p-8 text-center text-slate-400">Loading expenses...</div>
+      ) : loadError ? (
+        <div role="alert" className="glass-card rounded-2xl p-8 text-center text-slate-400">
+          Could not load expenses.{" "}
+          <button type="button" onClick={handleRefresh} className="text-emerald-400 underline">Try again</button>
+        </div>
+      ) : <>
       {/* Native Mobile Cards View (< md) */}
       <div className="block md:hidden space-y-3">
         {filteredExpenses.length === 0 ? (
           <div className="glass-card rounded-2xl p-8 text-center text-slate-500">
-            No expenses logged for this period.
+            {search ? "No expenses match your search." : "No expenses logged for this period."}
           </div>
         ) : (
           filteredExpenses.map((e) => (
             <div key={e.id} className="glass-card rounded-2xl p-4 border border-slate-800 space-y-3 shadow-lg">
               <div className="flex items-start justify-between gap-3">
-                <div>
+                <div className="min-w-0 break-words">
                   <h3 className="font-bold text-white text-base leading-tight">{e.title}</h3>
                   <div className="text-xs text-blue-400 font-medium mt-0.5">Logged by: {e.creatorName}</div>
                   {e.description && <p className="text-xs text-slate-400 mt-1">{e.description}</p>}
@@ -246,7 +274,8 @@ export default function ExpenseClientPage({
                 {canDeleteExpense(e.createdBy) && (
                   <button
                     onClick={() => handleDelete(e.id, e.title)}
-                    disabled={deletingId === e.id}
+                    disabled={deletingId !== null}
+                    aria-label={`Delete ${e.title}`}
                     className="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition cursor-pointer"
                     title="Delete Expense"
                   >
@@ -277,7 +306,7 @@ export default function ExpenseClientPage({
               {filteredExpenses.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-8 text-center text-slate-500">
-                    No expenses logged for this period.
+                    {search ? "No expenses match your search." : "No expenses logged for this period."}
                   </td>
                 </tr>
               ) : (
@@ -307,7 +336,8 @@ export default function ExpenseClientPage({
                       {canDeleteExpense(e.createdBy) && (
                         <button
                           onClick={() => handleDelete(e.id, e.title)}
-                          disabled={deletingId === e.id}
+                          disabled={deletingId !== null}
+                          aria-label={`Delete ${e.title}`}
                           className="p-2 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition"
                           title="Delete Expense"
                         >
@@ -323,13 +353,19 @@ export default function ExpenseClientPage({
           </table>
         </div>
       </div>
+      </>}
 
       {/* Expense Modal */}
-      <ExpenseModal
+      {canCreate && isModalOpen && <ExpenseModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSuccess={handleRefresh}
-      />
+        onClose={closeModal}
+        onSuccess={(date, category) => {
+          if (date.slice(0, 7) !== filters.current.month || (filters.current.category !== "ALL" && filters.current.category !== category)) {
+            toast.info("The expense was saved, but is outside the current month or category filter.");
+          }
+          handleRefresh();
+        }}
+      />}
 
     </div>
   );
