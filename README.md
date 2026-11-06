@@ -8,6 +8,7 @@
 
 - **🍲 Meal Ledger & Live Rate Calculation**:
   - Track daily member meal counts (Breakfast, Lunch, Dinner).
+  - Members can view and update only their own meals; admins and managers can manage the shared ledger and view the mess-wide summary.
   - Calculate real-time monthly meal rates based on total food bazaar expenditure divided by total consumed meals.
 
 - **💸 Expense & Bazaar Tracking**:
@@ -103,6 +104,8 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 | `npm run db:seed` | Seeds the database using `prisma/seed.ts`. |
 | `npm run db:studio` | Opens Prisma Studio GUI in browser. |
 | `npm run lint` | Runs ESLint checks. |
+
+Run the meal access-control and validation tests with `node --import tsx --test tests/meal-service.test.mjs`.
 
 ---
 

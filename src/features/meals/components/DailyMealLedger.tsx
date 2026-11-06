@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { Calendar, ChevronLeft, ChevronRight, Save, Loader2, Plus, Minus, Utensils } from "lucide-react";
+import { useEffect, useRef, useState, useTransition } from "react";
+import { Calendar, ChevronLeft, ChevronRight, Save, Loader2, Plus, Minus } from "lucide-react";
 import { getDailyMeals, bulkSaveDailyMeals } from "@/server/actions/mealActions";
 import { toast } from "sonner";
 
@@ -10,6 +10,7 @@ interface DailyRecordItem {
   userName: string;
   userEmail: string;
   userMealStatus: boolean;
+  recordId: string | null;
   breakfast: number;
   lunch: number;
   dinner: number;
@@ -26,32 +27,60 @@ interface DailyMealLedgerProps {
 export default function DailyMealLedger({ initialDate, initialRecords, canEdit }: DailyMealLedgerProps) {
   const [selectedDate, setSelectedDate] = useState(initialDate);
   const [records, setRecords] = useState<DailyRecordItem[]>(initialRecords);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [isPending, startTransition] = useTransition();
+  const [loadedDate, setLoadedDate] = useState(initialDate);
+  const requestId = useRef(0);
+  const [, startTransition] = useTransition();
 
   const fetchDailyData = (dateStr: string) => {
+    const currentRequest = ++requestId.current;
     setLoading(true);
     startTransition(async () => {
       try {
         const res = await getDailyMeals(dateStr);
-        setRecords(res.records as any);
-      } catch (err: any) {
-        toast.error("Failed to fetch meal data.");
+        if (currentRequest === requestId.current) {
+          setRecords(res.records);
+          setLoadedDate(dateStr);
+        }
+      } catch {
+        if (currentRequest === requestId.current) {
+          setRecords([]);
+          toast.error("Failed to fetch meal data.");
+        }
       } finally {
-        setLoading(false);
+        if (currentRequest === requestId.current) setLoading(false);
       }
     });
   };
 
+  useEffect(() => {
+    const currentRequest = ++requestId.current;
+    getDailyMeals(initialDate).then((result) => {
+      if (currentRequest === requestId.current) {
+        setRecords(result.records);
+        setLoadedDate(initialDate);
+      }
+    }).catch(() => {
+      if (currentRequest === requestId.current) {
+        setRecords([]);
+        toast.error("Failed to fetch meal data.");
+      }
+    }).finally(() => {
+      if (currentRequest === requestId.current) setLoading(false);
+    });
+    return () => { requestId.current += 1; };
+  }, [initialDate]);
+
   const handleDateChange = (newDate: string) => {
+    if (!newDate) return;
     setSelectedDate(newDate);
     fetchDailyData(newDate);
   };
 
   const shiftDate = (days: number) => {
-    const current = new Date(selectedDate);
-    current.setDate(current.getDate() + days);
+    const current = new Date(`${selectedDate}T00:00:00Z`);
+    current.setUTCDate(current.getUTCDate() + days);
     const dateStr = current.toISOString().split("T")[0];
     handleDateChange(dateStr);
   };
@@ -133,8 +162,9 @@ export default function DailyMealLedger({ initialDate, initialRecords, canEdit }
         toast.error(res.error);
       } else {
         toast.success(`Saved daily meals for ${selectedDate}`);
+        fetchDailyData(selectedDate);
       }
-    } catch (err: any) {
+    } catch {
       toast.error("Failed to save meal records.");
     } finally {
       setSaving(false);
@@ -150,32 +180,36 @@ export default function DailyMealLedger({ initialDate, initialRecords, canEdit }
     <div className="space-y-6">
       
       {/* Date Navigation & Controls */}
-      <div className="glass-card rounded-2xl p-3.5 sm:p-5 border border-slate-800/80 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 sm:gap-4 shadow-lg">
+      <div className="glass-card rounded-2xl p-3 sm:p-5 border border-slate-800/80 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 sm:gap-4 shadow-lg">
         
         {/* Date Selector */}
-        <div className="flex items-center gap-1.5 sm:gap-2 w-full md:w-auto">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 w-full md:w-auto">
           <button
             type="button"
             onClick={() => shiftDate(-1)}
+            disabled={saving}
             className="p-2 sm:p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white active:scale-95 transition cursor-pointer"
             title="Previous Day"
           >
             <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
 
-          <div className="flex-1 sm:flex-initial relative flex items-center justify-center gap-2 bg-slate-900 border border-slate-700/80 rounded-xl px-2.5 sm:px-4 py-2 text-white">
+          <div className="flex-1 min-w-0 sm:flex-initial relative flex items-center justify-center gap-2 bg-slate-900 border border-slate-700/80 rounded-xl px-2.5 sm:px-4 py-2 text-white">
             <Calendar className="w-4 h-4 text-emerald-400 shrink-0" />
             <input
               type="date"
+              aria-label="Meal date"
               value={selectedDate}
+              disabled={saving}
               onChange={(e) => handleDateChange(e.target.value)}
-              className="bg-transparent font-semibold text-xs sm:text-sm focus:outline-none cursor-pointer text-center"
+              className="min-w-0 w-full bg-transparent font-semibold text-xs sm:text-sm focus:outline-none cursor-pointer text-center"
             />
           </div>
 
           <button
             type="button"
             onClick={() => shiftDate(1)}
+            disabled={saving}
             className="p-2 sm:p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white active:scale-95 transition cursor-pointer"
             title="Next Day"
           >
@@ -185,6 +219,7 @@ export default function DailyMealLedger({ initialDate, initialRecords, canEdit }
           <button
             type="button"
             onClick={() => handleDateChange(new Date().toISOString().split("T")[0])}
+            disabled={saving}
             className="px-3 py-2 text-xs font-semibold rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 active:scale-95 transition cursor-pointer shrink-0"
           >
             Today
@@ -214,17 +249,20 @@ export default function DailyMealLedger({ initialDate, initialRecords, canEdit }
             <button
               type="button"
               onClick={handleSave}
-              disabled={saving || loading}
+              disabled={saving || loading || selectedDate !== loadedDate || records.length === 0}
               className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-lg shadow-emerald-600/20 active:scale-95 transition disabled:opacity-50 cursor-pointer"
             >
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              Save Day's Ledger
+              Save Day&apos;s Ledger
             </button>
           </div>
         )}
       </div>
 
       {/* Daily Meal Stats Summary Pills */}
+      {!loading && records.some((record) => !record.recordId) && (
+        <p className="text-xs text-slate-400">Suggested values for unrecorded meals are not saved until you save the ledger.</p>
+      )}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4">
         <div className="glass-card rounded-xl p-3 sm:p-4 text-center border border-slate-800/80">
           <span className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">Breakfast</span>
@@ -269,7 +307,7 @@ export default function DailyMealLedger({ initialDate, initialRecords, canEdit }
             </div>
 
             {/* Steppers Grid */}
-            <div className="grid grid-cols-3 gap-2 bg-slate-950/80 p-3 rounded-xl border border-slate-800/80">
+            <div className="grid grid-cols-1 min-[400px]:grid-cols-3 gap-2 bg-slate-950/80 p-3 rounded-xl border border-slate-800/80">
               
               {/* Breakfast Stepper */}
               <div className="flex flex-col items-center gap-1.5">
@@ -278,6 +316,7 @@ export default function DailyMealLedger({ initialDate, initialRecords, canEdit }
                   <div className="flex items-center gap-1">
                     <button
                       type="button"
+                      aria-label={`Decrease breakfast for ${r.userName}`}
                       onClick={() => handleStepMeal(r.userId, "breakfast", -0.5)}
                       className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 flex items-center justify-center font-bold border border-slate-700 transition"
                     >
@@ -286,6 +325,7 @@ export default function DailyMealLedger({ initialDate, initialRecords, canEdit }
                     <span className="w-6 text-center font-black text-amber-400 text-sm">{r.breakfast}</span>
                     <button
                       type="button"
+                      aria-label={`Increase breakfast for ${r.userName}`}
                       onClick={() => handleStepMeal(r.userId, "breakfast", 0.5)}
                       className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 flex items-center justify-center font-bold border border-slate-700 transition"
                     >
@@ -304,6 +344,7 @@ export default function DailyMealLedger({ initialDate, initialRecords, canEdit }
                   <div className="flex items-center gap-1">
                     <button
                       type="button"
+                      aria-label={`Decrease lunch for ${r.userName}`}
                       onClick={() => handleStepMeal(r.userId, "lunch", -0.5)}
                       className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 flex items-center justify-center font-bold border border-slate-700 transition"
                     >
@@ -312,6 +353,7 @@ export default function DailyMealLedger({ initialDate, initialRecords, canEdit }
                     <span className="w-6 text-center font-black text-emerald-400 text-sm">{r.lunch}</span>
                     <button
                       type="button"
+                      aria-label={`Increase lunch for ${r.userName}`}
                       onClick={() => handleStepMeal(r.userId, "lunch", 0.5)}
                       className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 flex items-center justify-center font-bold border border-slate-700 transition"
                     >
@@ -330,6 +372,7 @@ export default function DailyMealLedger({ initialDate, initialRecords, canEdit }
                   <div className="flex items-center gap-1">
                     <button
                       type="button"
+                      aria-label={`Decrease dinner for ${r.userName}`}
                       onClick={() => handleStepMeal(r.userId, "dinner", -0.5)}
                       className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 flex items-center justify-center font-bold border border-slate-700 transition"
                     >
@@ -338,6 +381,7 @@ export default function DailyMealLedger({ initialDate, initialRecords, canEdit }
                     <span className="w-6 text-center font-black text-indigo-400 text-sm">{r.dinner}</span>
                     <button
                       type="button"
+                      aria-label={`Increase dinner for ${r.userName}`}
                       onClick={() => handleStepMeal(r.userId, "dinner", 0.5)}
                       className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 flex items-center justify-center font-bold border border-slate-700 transition"
                     >

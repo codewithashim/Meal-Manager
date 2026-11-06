@@ -1,12 +1,14 @@
 import { db } from "@/services/db.service";
 import { PermissionService } from "@/services/permission.service";
 import { AuditService } from "@/services/audit.service";
-import { Role } from "@prisma/client";
+import { Role, type MealRecord } from "@prisma/client";
 import {
   SaveMealRecordInput,
   BulkDailyMealInput,
   saveMealRecordSchema,
   bulkDailyMealSchema,
+  mealDateSchema,
+  mealMonthSchema,
 } from "@/lib/validations/meal";
 
 function parseDateString(dateStr: string): Date {
@@ -14,23 +16,28 @@ function parseDateString(dateStr: string): Date {
   return new Date(Date.UTC(year, month - 1, day));
 }
 
-export type ServiceResult<T = any> =
-  | { success: true; error?: undefined; [key: string]: any }
+export type ServiceResult<T = undefined> =
+  | { success: true; error?: undefined; record?: T }
   | { success?: false; error: string };
 
 export class MealService {
   public static async getDailyMeals(
+    actorId: string,
     actorRole: Role,
     actorPermissions?: string[],
     dateStr?: string
   ) {
     PermissionService.enforce(actorRole, "MEALS", "READ", actorPermissions);
 
-    const todayStr = dateStr || new Date().toISOString().split("T")[0];
+    const todayStr = mealDateSchema.parse(dateStr ?? new Date().toISOString().split("T")[0]);
     const targetDate = parseDateString(todayStr);
 
     const users = await db.user.findMany({
-      where: { status: "ACTIVE", role: { not: Role.ADMIN } },
+      where: {
+        status: "ACTIVE",
+        role: { not: Role.ADMIN },
+        ...(actorRole === Role.USER ? { id: actorId } : {}),
+      },
       select: {
         id: true,
         name: true,
@@ -44,6 +51,7 @@ export class MealService {
       where: {
         date: targetDate,
         user: { role: { not: Role.ADMIN } },
+        ...(actorRole === Role.USER ? { userId: actorId } : {}),
       },
     });
 
@@ -75,10 +83,13 @@ export class MealService {
     monthStr: string
   ) {
     PermissionService.enforce(actorRole, "MEALS", "READ", actorPermissions);
+    if (actorRole === Role.USER) {
+      throw new Error("Forbidden: The mess-wide meal summary is available to managers only.");
+    }
 
-    const [year, month] = monthStr.split("-").map(Number);
+    const [year, month] = mealMonthSchema.parse(monthStr).split("-").map(Number);
     const startDate = new Date(Date.UTC(year, month - 1, 1));
-    const endDate = new Date(Date.UTC(year, month, 0, 23, 59, 59));
+    const endDate = new Date(Date.UTC(year, month, 1));
 
     const users = await db.user.findMany({
       where: { status: "ACTIVE", role: { not: Role.ADMIN } },
@@ -95,7 +106,7 @@ export class MealService {
       where: {
         date: {
           gte: startDate,
-          lte: endDate,
+          lt: endDate,
         },
         user: { role: { not: Role.ADMIN } },
       },
@@ -106,7 +117,7 @@ export class MealService {
         category: "FOOD",
         date: {
           gte: startDate,
-          lte: endDate,
+          lt: endDate,
         },
       },
       _sum: { amount: true },
@@ -182,14 +193,14 @@ export class MealService {
       throw new Error("Forbidden: You can only view your own meal history.");
     }
 
-    const [year, month] = monthStr.split("-").map(Number);
+    const [year, month] = mealMonthSchema.parse(monthStr).split("-").map(Number);
     const startDate = new Date(Date.UTC(year, month - 1, 1));
-    const endDate = new Date(Date.UTC(year, month, 0, 23, 59, 59));
+    const endDate = new Date(Date.UTC(year, month, 1));
 
     const records = await db.mealRecord.findMany({
       where: {
         userId,
-        date: { gte: startDate, lte: endDate },
+        date: { gte: startDate, lt: endDate },
       },
       orderBy: { date: "asc" },
     });
@@ -206,20 +217,22 @@ export class MealService {
   }
 
   public static async getMessMonthDailyRecords(
+    actorId: string,
     actorRole: Role,
     actorPermissions: string[] | undefined,
     monthStr: string
   ) {
     PermissionService.enforce(actorRole, "MEALS", "READ", actorPermissions);
 
-    const [year, month] = monthStr.split("-").map(Number);
+    const [year, month] = mealMonthSchema.parse(monthStr).split("-").map(Number);
     const startDate = new Date(Date.UTC(year, month - 1, 1));
-    const endDate = new Date(Date.UTC(year, month, 0, 23, 59, 59));
+    const endDate = new Date(Date.UTC(year, month, 1));
 
     const records = await db.mealRecord.findMany({
       where: {
-        date: { gte: startDate, lte: endDate },
+        date: { gte: startDate, lt: endDate },
         user: { role: { not: Role.ADMIN } },
+        ...(actorRole === Role.USER ? { userId: actorId } : {}),
       },
       include: {
         user: {
@@ -244,15 +257,19 @@ export class MealService {
   }
 
   public static async saveSingleMealRecord(
+    actorId: string,
     actorRole: Role,
     actorPermissions: string[] | undefined,
     data: SaveMealRecordInput
-  ): Promise<ServiceResult> {
+  ): Promise<ServiceResult<MealRecord>> {
     PermissionService.enforce(actorRole, "MEALS", "MANAGE", actorPermissions);
 
     const parsed = saveMealRecordSchema.safeParse(data);
     if (!parsed.success) {
       return { error: parsed.error.issues[0].message };
+    }
+    if (actorRole === Role.USER && parsed.data.userId !== actorId) {
+      throw new Error("Forbidden: You can only edit your own meals.");
     }
 
     const targetDate = parseDateString(parsed.data.date);
@@ -297,6 +314,9 @@ export class MealService {
     const parsed = bulkDailyMealSchema.safeParse(data);
     if (!parsed.success) {
       return { error: parsed.error.issues[0].message };
+    }
+    if (actorRole === Role.USER && parsed.data.records.some((record) => record.userId !== actorId)) {
+      throw new Error("Forbidden: You can only edit your own meals.");
     }
 
     const targetDate = parseDateString(parsed.data.date);

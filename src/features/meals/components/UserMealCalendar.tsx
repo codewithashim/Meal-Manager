@@ -12,18 +12,24 @@ interface UserMealCalendarProps {
 
 export default function UserMealCalendar({ userId, initialMonth }: UserMealCalendarProps) {
   const [selectedMonth, setSelectedMonth] = useState(initialMonth);
-  const [records, setRecords] = useState<any[]>([]);
+  const [records, setRecords] = useState<Awaited<ReturnType<typeof getUserMealHistory>>>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
     async function loadHistory() {
       setLoading(true);
+      setLoadError(false);
+      setRecords([]);
       try {
         const data = await getUserMealHistory(userId, selectedMonth);
         if (isMounted) setRecords(data);
-      } catch (err: any) {
-        toast.error("Failed to load your meal history.");
+      } catch {
+        if (isMounted) {
+          setLoadError(true);
+          toast.error("Failed to load your meal history.");
+        }
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -57,7 +63,9 @@ export default function UserMealCalendar({ userId, initialMonth }: UserMealCalen
             <input
               type="month"
               value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value)}
+              onChange={(e) => {
+                if (e.target.value) setSelectedMonth(e.target.value);
+              }}
               className="bg-transparent font-medium text-xs sm:text-sm focus:outline-none cursor-pointer w-full"
             />
           </div>
@@ -79,7 +87,9 @@ export default function UserMealCalendar({ userId, initialMonth }: UserMealCalen
 
       {/* Native Mobile Cards View (< md) */}
       <div className="block md:hidden space-y-3">
-        {records.length === 0 ? (
+        {loading || loadError ? (
+          <div className="glass-card rounded-2xl p-8 text-center text-slate-400">{loading ? "Loading your meals..." : "Could not load your meals. Select a month to try again."}</div>
+        ) : records.length === 0 ? (
           <div className="glass-card rounded-2xl p-8 text-center text-slate-500">
             No meal records found for this month.
           </div>
@@ -127,7 +137,9 @@ export default function UserMealCalendar({ userId, initialMonth }: UserMealCalen
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60">
-              {records.length === 0 ? (
+              {loading || loadError ? (
+                <tr><td colSpan={6} className="px-6 py-8 text-center text-slate-400">{loading ? "Loading your meals..." : "Could not load your meals. Select a month to try again."}</td></tr>
+              ) : records.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-8 text-center text-slate-500">
                     No meal records found for this month.
