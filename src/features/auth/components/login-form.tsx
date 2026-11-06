@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { loginAction } from "@/server/actions/authActions";
-import { LogIn, ShieldCheck, AlertCircle, Loader2, User, Phone, Mail } from "lucide-react";
+import { ArrowRight, ShieldCheck, AlertCircle, Loader2, User, LockKeyhole, Eye, EyeOff, UtensilsCrossed } from "lucide-react";
 import { toast } from "sonner";
+import styles from "./login-form.module.css";
 
 export function LoginForm() {
   const router = useRouter();
@@ -13,6 +14,7 @@ export function LoginForm() {
 
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,79 +42,101 @@ export function LoginForm() {
   };
 
   return (
-    <div className="w-full max-w-md space-y-6 bg-slate-900/90 border border-slate-800 p-8 rounded-2xl shadow-2xl backdrop-blur-xl">
-      <div className="text-center space-y-2">
-        <div className="inline-flex items-center justify-center p-3 bg-emerald-500/10 text-emerald-400 rounded-xl mb-2">
-          <ShieldCheck className="w-8 h-8" />
+    <div className={styles.card}>
+      <div className={styles.intro}>
+        <div className={styles.brand}>
+          <div className={styles.brandIcon}>
+            <UtensilsCrossed aria-hidden="true" className="h-6 w-6" />
+          </div>
+          <div>
+            <p className={styles.brandName}>Meal Manager</p>
+            <p className={styles.brandCaption}>Residential mess portal</p>
+          </div>
         </div>
-        <h1 className="text-3xl font-extrabold tracking-tight text-slate-100">
-          Welcome to <span className="text-emerald-400">Meal Manager</span>
+        <p className={styles.eyebrow}>Your account</p>
+        <h1 className={styles.title}>
+          Welcome back
         </h1>
-        <p className="text-sm text-slate-400">
-          Residential Mess & Boarding Management Portal
+        <p className={styles.description}>
+          Sign in to manage your meals, bills, and account.
         </p>
       </div>
 
       {error && (
-        <div className="p-4 bg-rose-500/10 border border-rose-500/20 text-rose-300 text-sm rounded-xl flex items-center gap-3">
-          <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
+        <div id="login-error" role="alert" className="mb-5 flex items-start gap-3 rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-200">
+          <AlertCircle aria-hidden="true" className="h-5 w-5 shrink-0 text-rose-400" />
           <span>{error}</span>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className={styles.form}>
         <div>
-          <div className="flex items-center justify-between mb-2">
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400">
-              Email or Phone Number
-            </label>
-            <span className="text-[10px] text-emerald-400/80 font-medium flex items-center gap-1">
-              <Mail className="w-3 h-3" /> or <Phone className="w-3 h-3" />
-            </span>
-          </div>
-          <div className="relative">
+          <label htmlFor="login-identifier" className={styles.label}>
+            Email or phone number
+          </label>
+          <div className={styles.inputWrapper}>
+            <User aria-hidden="true" className={styles.inputIcon} />
             <input
+              id="login-identifier"
+              name="username"
               type="text"
               required
+              autoComplete="username"
+              autoCapitalize="none"
+              spellCheck={false}
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
-              placeholder="Email or phone (e.g. 01700000000)"
-              className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-950/70 border border-slate-800 text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all placeholder:text-slate-600 text-sm"
+              placeholder="Enter your email or phone"
+              className={styles.input}
             />
-            <User className="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5" />
           </div>
         </div>
 
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+          <label htmlFor="login-password" className={styles.label}>
             Password
           </label>
-          <input
-            type="password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            className="w-full px-4 py-3 rounded-xl bg-slate-950/70 border border-slate-800 text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all placeholder:text-slate-600 text-sm"
-          />
+          <div className={styles.inputWrapper}>
+            <LockKeyhole aria-hidden="true" className={styles.inputIcon} />
+            <input
+              id="login-password"
+              name="password"
+              type={showPassword ? "text" : "password"}
+              required
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
+              className={`${styles.input} ${styles.passwordInput}`}
+            />
+            <button
+              type="button"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              aria-controls="login-password"
+              onClick={() => setShowPassword((visible) => !visible)}
+              className={styles.toggle}
+            >
+              {showPassword ? <EyeOff aria-hidden="true" className="h-5 w-5" /> : <Eye aria-hidden="true" className="h-5 w-5" />}
+            </button>
+          </div>
         </div>
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-3.5 px-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold rounded-xl shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 transition-all disabled:opacity-50 text-sm cursor-pointer mt-6"
+          className={styles.submit}
         >
           {loading ? (
-            <Loader2 className="w-5 h-5 animate-spin" />
+            <><Loader2 aria-hidden="true" className="h-5 w-5 animate-spin" /> Signing in...</>
           ) : (
-            <>
-              <LogIn className="w-5 h-5" />
-              Sign In to Account
-            </>
+            <>Sign in <ArrowRight aria-hidden="true" className="h-4 w-4" /></>
           )}
         </button>
       </form>
-
+      <div className={styles.footer}>
+        <ShieldCheck aria-hidden="true" className="h-4 w-4 text-emerald-400" />
+        Your account, all in one place
+      </div>
     </div>
   );
 }
