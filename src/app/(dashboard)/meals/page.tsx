@@ -19,7 +19,7 @@ export default async function MealsPage() {
   const currentMonthStr = todayStr.substring(0, 7); // YYYY-MM
 
   const dailyData = await getDailyMeals(todayStr);
-  const monthlyData = await getMonthlyMealSummary(currentMonthStr);
+  const monthlyData = session.user.role === "USER" ? null : await getMonthlyMealSummary(currentMonthStr);
 
   return (
     <MealClientPage

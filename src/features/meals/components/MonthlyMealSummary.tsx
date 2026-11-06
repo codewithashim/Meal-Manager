@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { Calendar, Utensils, DollarSign, Calculator, FileSpreadsheet } from "lucide-react";
 import { getMonthlyMealSummary } from "@/server/actions/mealActions";
 import { toast } from "sonner";
@@ -31,23 +31,48 @@ interface MonthlyMealSummaryProps {
 export default function MonthlyMealSummary({ initialMonth, initialSummary }: MonthlyMealSummaryProps) {
   const [selectedMonth, setSelectedMonth] = useState(initialMonth);
   const [summary, setSummary] = useState(initialSummary);
-  const [loading, setLoading] = useState(false);
-  const [isPending, startTransition] = useTransition();
+  const [loading, setLoading] = useState(true);
+  const [loadedMonth, setLoadedMonth] = useState(initialMonth);
+  const requestId = useRef(0);
+  const [, startTransition] = useTransition();
 
   const handleMonthChange = (monthStr: string) => {
+    if (!monthStr) return;
+    const currentRequest = ++requestId.current;
     setSelectedMonth(monthStr);
     setLoading(true);
     startTransition(async () => {
       try {
         const res = await getMonthlyMealSummary(monthStr);
-        setSummary(res as any);
-      } catch (err: any) {
-        toast.error("Failed to fetch monthly summary.");
+        if (currentRequest === requestId.current) {
+          setSummary(res);
+          setLoadedMonth(monthStr);
+        }
+      } catch {
+        if (currentRequest === requestId.current) toast.error("Failed to fetch monthly summary.");
       } finally {
-        setLoading(false);
+        if (currentRequest === requestId.current) setLoading(false);
       }
     });
   };
+
+  useEffect(() => {
+    const currentRequest = ++requestId.current;
+    getMonthlyMealSummary(initialMonth).then((result) => {
+      if (currentRequest === requestId.current) {
+        setSummary(result);
+        setLoadedMonth(initialMonth);
+      }
+    }).catch(() => {
+      if (currentRequest === requestId.current) {
+        setLoadedMonth("");
+        toast.error("Failed to fetch monthly summary.");
+      }
+    }).finally(() => {
+      if (currentRequest === requestId.current) setLoading(false);
+    });
+    return () => { requestId.current += 1; };
+  }, [initialMonth]);
 
   return (
     <div className="space-y-6">
@@ -77,6 +102,9 @@ export default function MonthlyMealSummary({ initialMonth, initialSummary }: Mon
         </div>
       </div>
 
+      {loading || selectedMonth !== loadedMonth ? (
+        <p className="text-sm text-slate-400">{loading ? "Loading monthly summary..." : "Could not load this month. Select a month to try again."}</p>
+      ) : <div className="space-y-6">
       {/* Summary KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         
@@ -219,6 +247,7 @@ export default function MonthlyMealSummary({ initialMonth, initialSummary }: Mon
         </div>
       </div>
 
+      </div>}
     </div>
   );
 }

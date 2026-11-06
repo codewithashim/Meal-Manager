@@ -6,12 +6,13 @@ import MonthlyMealSummary from "@/features/meals/components/MonthlyMealSummary";
 import UserMealCalendar from "@/features/meals/components/UserMealCalendar";
 import MealCalendarView from "@/features/meals/components/MealCalendarView";
 import { UtensilsCrossed, Calendar, FileSpreadsheet, User, Grid } from "lucide-react";
+import type { getDailyMeals, getMonthlyMealSummary } from "@/server/actions/mealActions";
 
 interface MealClientPageProps {
   currentUserId: string;
   currentUserRole: string;
-  initialDailyData: any;
-  initialMonthlyData: any;
+  initialDailyData: Awaited<ReturnType<typeof getDailyMeals>>;
+  initialMonthlyData: Awaited<ReturnType<typeof getMonthlyMealSummary>> | null;
   initialDate: string;
   initialMonth: string;
 }
@@ -39,7 +40,9 @@ export default function MealClientPage({
             Meal Ledger & Interactive Calendar
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Track daily meal counts, view interactive monthly calendars, and monitor mess meal rates.
+            {isManagerOrAdmin
+              ? "Track daily meal counts, view monthly calendars, and monitor mess meal rates."
+              : "View and update your own daily meals."}
           </p>
         </div>
       </div>
@@ -70,7 +73,7 @@ export default function MealClientPage({
           <Calendar className="w-4 h-4" /> Daily Ledger
         </button>
 
-        <button
+        {isManagerOrAdmin && <button
           onClick={() => setActiveTab("MONTHLY")}
           className={`flex items-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer shrink-0 ${
             activeTab === "MONTHLY"
@@ -79,7 +82,7 @@ export default function MealClientPage({
           }`}
         >
           <FileSpreadsheet className="w-4 h-4" /> Monthly Summary
-        </button>
+        </button>}
 
         <button
           onClick={() => setActiveTab("MY_MEALS")}
@@ -96,7 +99,6 @@ export default function MealClientPage({
       {/* Tab Contents */}
       {activeTab === "CALENDAR" && (
         <MealCalendarView
-          currentUserId={currentUserId}
           currentUserRole={currentUserRole}
           initialMonth={initialMonth}
         />
@@ -110,7 +112,7 @@ export default function MealClientPage({
         />
       )}
 
-      {activeTab === "MONTHLY" && (
+      {activeTab === "MONTHLY" && initialMonthlyData && (
         <MonthlyMealSummary
           initialMonth={initialMonth}
           initialSummary={initialMonthlyData}

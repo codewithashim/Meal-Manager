@@ -10,6 +10,7 @@ export async function getDailyMeals(dateStr?: string) {
   if (!session?.user) throw new Error("Unauthorized");
 
   return await MealService.getDailyMeals(
+    session.user.id,
     session.user.role,
     session.user.permissions,
     dateStr
@@ -44,6 +45,7 @@ export async function getMessMonthDailyRecords(monthStr: string) {
   if (!session?.user) throw new Error("Unauthorized");
 
   return await MealService.getMessMonthDailyRecords(
+    session.user.id,
     session.user.role,
     session.user.permissions,
     monthStr
@@ -56,14 +58,15 @@ export async function saveSingleMealRecord(data: SaveMealRecordInput) {
 
   try {
     const result = await MealService.saveSingleMealRecord(
+      session.user.id,
       session.user.role,
       session.user.permissions,
       data
     );
     if (result.success) revalidatePath("/meals");
     return result;
-  } catch (err: any) {
-    return { error: err.message };
+  } catch (err: unknown) {
+    return { error: err instanceof Error ? err.message : "Failed to save meal record." };
   }
 }
 
@@ -80,7 +83,7 @@ export async function bulkSaveDailyMeals(data: BulkDailyMealInput) {
     );
     if (result.success) revalidatePath("/meals");
     return result;
-  } catch (err: any) {
-    return { error: err.message };
+  } catch (err: unknown) {
+    return { error: err instanceof Error ? err.message : "Failed to save meal records." };
   }
 }

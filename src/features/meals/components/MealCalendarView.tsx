@@ -6,72 +6,86 @@ import {
   ChevronRight,
   Calendar as CalendarIcon,
   Utensils,
-  Sun,
-  Moon,
-  Coffee,
   Users,
   Loader2,
   Edit3,
   FileSpreadsheet,
   Grid,
   LayoutList,
-  Minus,
-  Plus,
 } from "lucide-react";
 import AppDrawer from "@/shared/components/ui/AppDrawer";
-import { getMessMonthDailyRecords, bulkSaveDailyMeals } from "@/server/actions/mealActions";
-import { getUsers } from "@/server/actions/userActions";
+import MealDayEditor from "@/features/meals/components/MealDayEditor";
+import { getDailyMeals, getMessMonthDailyRecords, bulkSaveDailyMeals } from "@/server/actions/mealActions";
 import { toast } from "sonner";
 
 interface MealCalendarViewProps {
-  currentUserId: string;
   currentUserRole: string;
   initialMonth: string;
 }
 
+type CalendarRecord = Awaited<ReturnType<typeof getMessMonthDailyRecords>>[number];
+type DailyRecord = Awaited<ReturnType<typeof getDailyMeals>>["records"][number];
+type Member = { id: string; name: string };
+
 export default function MealCalendarView({
-  currentUserId,
   currentUserRole,
   initialMonth,
 }: MealCalendarViewProps) {
   const isManagerOrAdmin = currentUserRole === "ADMIN" || currentUserRole === "MANAGER";
   
   const [selectedMonth, setSelectedMonth] = useState(initialMonth); // YYYY-MM
-  const [selectedUserFilter, setSelectedUserFilter] = useState<string>("ALL"); // "ALL" or userId
+  const [selectedUserFilter, setSelectedUserFilter] = useState<string>("ALL");
   const [viewMode, setViewMode] = useState<"AGENDA" | "GRID">("AGENDA"); // "AGENDA" (mobile friendly list) or "GRID"
   
-  const [records, setRecords] = useState<any[]>([]);
-  const [members, setMembers] = useState<any[]>([]);
+  const [records, setRecords] = useState<CalendarRecord[]>([]);
+  const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [loadingMembers, setLoadingMembers] = useState(true);
+  const [inspecting, setInspecting] = useState(false);
 
   // Inspector / Edit Drawer State
   const [selectedDayDate, setSelectedDayDate] = useState<string | null>(null);
-  const [dayInspectRecords, setDayInspectRecords] = useState<any[]>([]);
+  const [dayInspectRecords, setDayInspectRecords] = useState<DailyRecord[]>([]);
   const [editingModalOpen, setEditingModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
     async function loadMembers() {
       try {
-        const res: any = await getUsers();
-        if (Array.isArray(res)) setMembers(res);
-        else if (res && res.users) setMembers(res.users);
-      } catch (err) {
-        // ignore
+        const result = await getDailyMeals();
+        if (isMounted) {
+          setMembers(result.records.map((record) => ({
+            id: record.userId,
+            name: record.userName,
+          })));
+        }
+      } catch {
+        if (isMounted) toast.error("Failed to load meal participants. Reload the page to try again.");
+      } finally {
+        if (isMounted) setLoadingMembers(false);
       }
     }
     loadMembers();
+    return () => { isMounted = false; };
   }, []);
 
   useEffect(() => {
     let isMounted = true;
     async function loadData() {
       setLoading(true);
+      setLoadError(false);
       try {
         const data = await getMessMonthDailyRecords(selectedMonth);
         if (isMounted) setRecords(data);
-      } catch (err) {
-        toast.error("Failed to load monthly meal records.");
+      } catch {
+        if (isMounted) {
+          setRecords([]);
+          setLoadError(true);
+          toast.error("Failed to load monthly meal records.");
+        }
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -80,7 +94,7 @@ export default function MealCalendarView({
     return () => {
       isMounted = false;
     };
-  }, [selectedMonth]);
+  }, [selectedMonth, refreshKey]);
 
   // Calendar Date Math
   const [yearNum, monthNum] = selectedMonth.split("-").map(Number);
@@ -112,7 +126,7 @@ export default function MealCalendarView({
     : records.filter((r) => r.userId === selectedUserFilter);
 
   // Group records by YYYY-MM-DD
-  const dateRecordMap = new Map<string, any[]>();
+  const dateRecordMap = new Map<string, CalendarRecord[]>();
   filteredRecords.forEach((r) => {
     const list = dateRecordMap.get(r.date) || [];
     list.push(r);
@@ -121,33 +135,30 @@ export default function MealCalendarView({
 
   // Calculate Monthly KPIs
   const totalMealsMonth = filteredRecords.reduce((acc, r) => acc + r.totalMeals, 0);
-  const activeDaysCount = dateRecordMap.size;
+  const activeDaysCount = [...dateRecordMap.values()].filter((day) => day.some((record) => record.totalMeals > 0)).length;
   const avgMealsPerDay = activeDaysCount > 0 ? (totalMealsMonth / activeDaysCount).toFixed(1) : "0.0";
 
   // Open Inspector Drawer for a date
-  const handleDayClick = (dateStr: string) => {
-    setSelectedDayDate(dateStr);
-    
-    // Find records for this date
-    const dayRecords = records.filter((r) => r.date === dateStr);
-    
-    // Build inspection items for all active members
-    const activeMembers = members.length > 0 ? members : [{ id: currentUserId, name: "You" }];
-    const combined = activeMembers.map((m) => {
-      const existing = dayRecords.find((r) => r.userId === m.id);
-      return {
-        userId: m.id,
-        userName: m.name,
-        breakfast: existing ? existing.breakfast : m.mealStatus ? 1 : 0,
-        lunch: existing ? existing.lunch : m.mealStatus ? 1 : 0,
-        dinner: existing ? existing.dinner : m.mealStatus ? 1 : 0,
-        totalMeals: existing ? existing.totalMeals : m.mealStatus ? 3 : 0,
-        note: existing?.note || "",
-      };
-    });
-
-    setDayInspectRecords(combined);
-    setEditingModalOpen(true);
+  const handleDayClick = async (dateStr: string) => {
+    if (inspecting || loading) return;
+    setInspecting(true);
+    try {
+      const result = await getDailyMeals(dateStr);
+      const available = selectedUserFilter === "ALL"
+        ? result.records
+        : result.records.filter((record) => record.userId === selectedUserFilter);
+      if (available.length === 0) {
+        toast.error("No active meal participant is available for this day.");
+        return;
+      }
+      setSelectedDayDate(dateStr);
+      setDayInspectRecords(available);
+      setEditingModalOpen(true);
+    } catch {
+      toast.error("Failed to load daily meal entries.");
+    } finally {
+      setInspecting(false);
+    }
   };
 
   // Save Day Edits
@@ -171,11 +182,16 @@ export default function MealCalendarView({
       } else {
         toast.success(`Updated meal entries for ${selectedDayDate}`);
         setEditingModalOpen(false);
-        // Refresh records
-        const fresh = await getMessMonthDailyRecords(selectedMonth);
-        setRecords(fresh);
+        try {
+          const fresh = await getMessMonthDailyRecords(selectedMonth);
+          setRecords(fresh);
+        } catch {
+          setRecords([]);
+          setLoadError(true);
+          toast.error("Meals were saved, but the calendar could not be refreshed.");
+        }
       }
-    } catch (err) {
+    } catch {
       toast.error("Failed to save meal record updates.");
     } finally {
       setSaving(false);
@@ -195,6 +211,7 @@ export default function MealCalendarView({
             <div className="flex items-center gap-1 bg-slate-900 border border-slate-700/80 rounded-xl p-1">
               <button
                 onClick={handlePrevMonth}
+                disabled={inspecting}
                 className="p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition cursor-pointer"
                 title="Previous Month"
               >
@@ -203,6 +220,7 @@ export default function MealCalendarView({
 
               <button
                 onClick={handleTodayClick}
+                disabled={inspecting}
                 className="px-3 py-1.5 text-xs font-semibold text-blue-400 hover:bg-slate-800 rounded-lg transition cursor-pointer"
               >
                 Today
@@ -210,6 +228,7 @@ export default function MealCalendarView({
 
               <button
                 onClick={handleNextMonth}
+                disabled={inspecting}
                 className="p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition cursor-pointer"
                 title="Next Month"
               >
@@ -217,11 +236,12 @@ export default function MealCalendarView({
               </button>
             </div>
 
-            <h2 className="text-base sm:text-lg font-bold text-white tracking-tight flex items-center gap-2">
-              <CalendarIcon className="w-5 h-5 text-emerald-400" />
+            <h2 className="text-sm sm:text-lg font-bold text-white tracking-tight flex items-center gap-2 min-w-0">
+              <CalendarIcon className="w-5 h-5 text-emerald-400 shrink-0" />
               {new Date(Date.UTC(yearNum, monthNum - 1, 1)).toLocaleDateString("en-US", {
                 month: "long",
                 year: "numeric",
+                timeZone: "UTC",
               })}
             </h2>
           </div>
@@ -256,8 +276,10 @@ export default function MealCalendarView({
             </div>
 
             {/* Member Filter Dropdown */}
-            <div className="relative flex-1 sm:w-52">
+            {isManagerOrAdmin && <div className="relative flex-1 sm:w-52">
               <select
+                aria-label="Filter by member"
+                disabled={loadingMembers || inspecting}
                 value={selectedUserFilter}
                 onChange={(e) => setSelectedUserFilter(e.target.value)}
                 className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-xs font-semibold text-white focus:outline-none focus:border-emerald-500 cursor-pointer"
@@ -269,14 +291,14 @@ export default function MealCalendarView({
                   </option>
                 ))}
               </select>
-            </div>
+            </div>}
 
           </div>
 
         </div>
 
         {/* Quick Month KPIs */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2 border-t border-slate-800/80">
+        {!loading && !loadError && <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2 border-t border-slate-800/80">
           
           <div className="bg-slate-950/70 p-2.5 sm:p-3 rounded-xl border border-slate-800 flex items-center gap-2.5">
             <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0">
@@ -308,17 +330,17 @@ export default function MealCalendarView({
             </div>
           </div>
 
-          <div className="bg-slate-950/70 p-2.5 sm:p-3 rounded-xl border border-slate-800 flex items-center gap-2.5">
+          {isManagerOrAdmin && <div className="bg-slate-950/70 p-2.5 sm:p-3 rounded-xl border border-slate-800 flex items-center gap-2.5">
             <div className="p-2 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 shrink-0">
               <Users className="w-4 h-4" />
             </div>
             <div>
               <div className="text-[10px] text-slate-400 uppercase font-semibold">Members Count</div>
-              <div className="text-sm sm:text-base font-bold text-white">{members.length || 1} Members</div>
+              <div className="text-sm sm:text-base font-bold text-white">{loadingMembers ? "Loading..." : `${members.length} Members`}</div>
             </div>
-          </div>
+          </div>}
 
-        </div>
+        </div>}
 
       </div>
 
@@ -328,11 +350,16 @@ export default function MealCalendarView({
           <Loader2 className="w-8 h-8 animate-spin text-emerald-400" />
           <span className="text-sm font-medium">Loading meal calendar...</span>
         </div>
+      ) : loadError ? (
+        <div className="glass-card rounded-2xl p-8 text-center text-slate-400">
+          <p>Could not load the meal calendar.</p>
+          <button type="button" onClick={() => setRefreshKey((key) => key + 1)} className="mt-3 rounded-xl bg-slate-800 px-4 py-2 text-sm text-white">Try again</button>
+        </div>
       ) : viewMode === "AGENDA" ? (
         
         /* 📱 MOBILE AGENDA LIST VIEW (100% Mobile Friendly) */
         <div className="space-y-3">
-          <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-400 px-1">
+          <div className="flex flex-wrap gap-2 items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-400 px-1">
             <span>Daily Meals Agenda ({selectedMonth})</span>
             <span className="text-[11px] text-emerald-400 font-normal">Tap any day to inspect & edit</span>
           </div>
@@ -345,7 +372,7 @@ export default function MealCalendarView({
               const isToday = dateStr === todayStr;
 
               const dateObj = new Date(Date.UTC(yearNum, monthNum - 1, dayNum));
-              const dayName = dateObj.toLocaleDateString("en-US", { weekday: "short" });
+              const dayName = dateObj.toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" });
 
               const dayRecords = dateRecordMap.get(dateStr) || [];
               const totalDayMeals = dayRecords.reduce((acc, r) => acc + r.totalMeals, 0);
@@ -357,6 +384,15 @@ export default function MealCalendarView({
                 <div
                   key={dateStr}
                   onClick={() => handleDayClick(dateStr)}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Edit meals for ${dateStr}`}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      void handleDayClick(dateStr);
+                    }
+                  }}
                   className={`glass-card rounded-2xl p-4 border transition cursor-pointer space-y-3 shadow-lg hover:scale-[1.01] active:scale-[0.99] ${
                     isToday
                       ? "bg-gradient-to-br from-slate-900 via-emerald-950/40 to-slate-900 border-emerald-500/80 shadow-emerald-950/40"
@@ -394,7 +430,7 @@ export default function MealCalendarView({
                             : "bg-slate-800 text-slate-500 border-slate-700"
                         }`}
                       >
-                        {totalDayMeals.toFixed(selectedUserFilter === "ALL" ? 0 : 1)} meals
+                        {totalDayMeals} meals
                       </span>
                       <Edit3 className="w-3.5 h-3.5 text-slate-400" />
                     </div>
@@ -424,7 +460,7 @@ export default function MealCalendarView({
 
                   {/* Footer: User count */}
                   <div className="text-[11px] text-slate-400 flex items-center justify-between pt-1 border-t border-slate-800/60">
-                    <span>{dayRecords.length} active member entries</span>
+                    <span>{isManagerOrAdmin ? `${dayRecords.length} member entries` : dayRecords.length ? "Meals recorded" : "Not recorded"}</span>
                     <span className="text-blue-400 font-medium hover:underline">Inspect Drawer &rarr;</span>
                   </div>
 
@@ -480,6 +516,15 @@ export default function MealCalendarView({
                     <div
                       key={dateStr}
                       onClick={() => handleDayClick(dateStr)}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`Edit meals for ${dateStr}`}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          void handleDayClick(dateStr);
+                        }
+                      }}
                       className={`min-h-[105px] p-2.5 rounded-xl border transition cursor-pointer flex flex-col justify-between group ${
                         isToday
                           ? "bg-gradient-to-br from-emerald-950/80 to-slate-900 border-emerald-500/80 shadow-lg shadow-emerald-950/50"
@@ -502,7 +547,7 @@ export default function MealCalendarView({
 
                         {totalDayMeals > 0 && (
                           <span className="font-extrabold text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded-full">
-                            {totalDayMeals.toFixed(selectedUserFilter === "ALL" ? 0 : 1)}
+                            {totalDayMeals}
                           </span>
                         )}
                       </div>
@@ -530,7 +575,7 @@ export default function MealCalendarView({
 
                       {/* Footer Action Hint */}
                       <div className="text-[9px] text-slate-500 group-hover:text-slate-300 flex items-center justify-between pt-1 border-t border-slate-800/40">
-                        <span>{dayRecords.length > 0 ? `${dayRecords.length} users` : "Off"}</span>
+                        <span>{dayRecords.length > 0 ? (isManagerOrAdmin ? `${dayRecords.length} users` : "Recorded") : "Not recorded"}</span>
                         <Edit3 className="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 text-emerald-400" />
                       </div>
 
@@ -546,20 +591,26 @@ export default function MealCalendarView({
 
       )}
 
-      {/* Reusable AppDrawer for Daily Inspector */}
       <AppDrawer
         isOpen={editingModalOpen && !!selectedDayDate}
-        onClose={() => setEditingModalOpen(false)}
+        onClose={() => { if (!saving) setEditingModalOpen(false); }}
         icon={<CalendarIcon className="w-5 h-5" />}
-        title={`Daily Meal Inspector: ${selectedDayDate}`}
-        subtitle="Tap + or - to update Breakfast, Lunch & Dinner for members."
+        title="Edit daily meals"
+        subtitle={selectedDayDate ? new Date(`${selectedDayDate}T00:00:00Z`).toLocaleDateString("en-US", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+          timeZone: "UTC",
+        }) : ""}
         maxWidth="2xl"
         footer={
-          <div className="flex items-center justify-end gap-2.5">
+          <div className="flex items-center justify-end gap-3">
             <button
               type="button"
               onClick={() => setEditingModalOpen(false)}
-              className="px-4 py-2 text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition cursor-pointer"
+              disabled={saving}
+              className="min-h-11 flex-1 rounded-xl border border-slate-700 px-4 text-sm font-semibold text-slate-300 transition hover:bg-slate-800 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400 disabled:opacity-40 sm:flex-none"
             >
               Cancel
             </button>
@@ -567,139 +618,20 @@ export default function MealCalendarView({
               type="button"
               onClick={handleSaveDayEdits}
               disabled={saving}
-              className="flex items-center gap-2 px-5 py-2.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 rounded-xl shadow-lg shadow-emerald-600/25 transition disabled:opacity-50 cursor-pointer"
+              className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400 disabled:opacity-50 sm:flex-none"
             >
-              {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-              Save Changes
+              {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+              {saving ? "Saving..." : "Save meals"}
             </button>
           </div>
         }
       >
-        <div className="space-y-3">
-          {dayInspectRecords.map((item, idx) => (
-            <div
-              key={item.userId}
-              className="bg-slate-950/80 p-3.5 rounded-2xl border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md"
-            >
-              <div className="flex items-center justify-between sm:justify-start gap-2">
-                <span className="font-bold text-white text-sm block">{item.userName}</span>
-                <span className="text-xs text-emerald-400 font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/25">
-                  Total: {item.breakfast + item.lunch + item.dinner} meals
-                </span>
-              </div>
-
-              {/* Meal Steppers: Breakfast, Lunch, Dinner */}
-              <div className="grid grid-cols-3 gap-2 bg-slate-900/90 p-2 rounded-xl border border-slate-800/80">
-                
-                {/* Breakfast */}
-                <div className="flex flex-col items-center gap-1">
-                  <span className="text-[10px] text-amber-400 font-bold uppercase flex items-center gap-0.5">
-                    <Coffee className="w-3 h-3" /> Breakfast
-                  </span>
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const next = [...dayInspectRecords];
-                        const cur = next[idx].breakfast;
-                        next[idx].breakfast = Math.max(0, cur - 0.5);
-                        setDayInspectRecords(next);
-                      }}
-                      className="w-7 h-7 rounded-lg bg-slate-800 active:bg-slate-700 text-slate-300 flex items-center justify-center font-bold"
-                    >
-                      <Minus className="w-3 h-3" />
-                    </button>
-                    <span className="w-5 text-center font-extrabold text-amber-400 text-xs">
-                      {item.breakfast}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const next = [...dayInspectRecords];
-                        next[idx].breakfast += 0.5;
-                        setDayInspectRecords(next);
-                      }}
-                      className="w-7 h-7 rounded-lg bg-slate-800 active:bg-slate-700 text-slate-300 flex items-center justify-center font-bold"
-                    >
-                      <Plus className="w-3 h-3" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Lunch */}
-                <div className="flex flex-col items-center gap-1">
-                  <span className="text-[10px] text-emerald-400 font-bold uppercase flex items-center gap-0.5">
-                    <Sun className="w-3 h-3" /> Lunch
-                  </span>
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const next = [...dayInspectRecords];
-                        const cur = next[idx].lunch;
-                        next[idx].lunch = Math.max(0, cur - 0.5);
-                        setDayInspectRecords(next);
-                      }}
-                      className="w-7 h-7 rounded-lg bg-slate-800 active:bg-slate-700 text-slate-300 flex items-center justify-center font-bold"
-                    >
-                      <Minus className="w-3 h-3" />
-                    </button>
-                    <span className="w-5 text-center font-extrabold text-emerald-400 text-xs">
-                      {item.lunch}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const next = [...dayInspectRecords];
-                        next[idx].lunch += 0.5;
-                        setDayInspectRecords(next);
-                      }}
-                      className="w-7 h-7 rounded-lg bg-slate-800 active:bg-slate-700 text-slate-300 flex items-center justify-center font-bold"
-                    >
-                      <Plus className="w-3 h-3" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Dinner */}
-                <div className="flex flex-col items-center gap-1">
-                  <span className="text-[10px] text-indigo-400 font-bold uppercase flex items-center gap-0.5">
-                    <Moon className="w-3 h-3" /> Dinner
-                  </span>
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const next = [...dayInspectRecords];
-                        const cur = next[idx].dinner;
-                        next[idx].dinner = Math.max(0, cur - 0.5);
-                        setDayInspectRecords(next);
-                      }}
-                      className="w-7 h-7 rounded-lg bg-slate-800 active:bg-slate-700 text-slate-300 flex items-center justify-center font-bold"
-                    >
-                      <Minus className="w-3 h-3" />
-                    </button>
-                    <span className="w-5 text-center font-extrabold text-indigo-400 text-xs">
-                      {item.dinner}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const next = [...dayInspectRecords];
-                        next[idx].dinner += 0.5;
-                        setDayInspectRecords(next);
-                      }}
-                      className="w-7 h-7 rounded-lg bg-slate-800 active:bg-slate-700 text-slate-300 flex items-center justify-center font-bold"
-                    >
-                      <Plus className="w-3 h-3" />
-                    </button>
-                  </div>
-                </div>
-
-              </div>
-            </div>
-          ))}
-        </div>
+        <MealDayEditor
+          records={dayInspectRecords}
+          onChange={setDayInspectRecords}
+          disabled={saving}
+          isManagerOrAdmin={isManagerOrAdmin}
+        />
       </AppDrawer>
 
     </div>
