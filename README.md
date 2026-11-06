@@ -13,6 +13,7 @@
 
 - **💸 Expense & Bazaar Tracking**:
   - Log daily expenses categorized by Food, Utilities (Electricity, Water, Gas, Internet), Rent, Staff Salaries, and Maintenance.
+  - Members can view the shared expense ledger and record any category, but can delete only their own entries. Admins and managers can delete any entry.
   - Attach notes and track deposited bazaar money per member.
 
 - **📊 Itemized Monthly Invoices & Billing**:

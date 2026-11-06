@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { getExpenses } from "@/server/actions/billingActions";
 import ExpenseClientPage from "@/features/expenses/components/ExpenseClientPage";
+import { hasPermission } from "@/lib/permissions";
 
 export const metadata = {
   title: "Expenses | Meal Manager",
@@ -20,11 +21,13 @@ export default async function ExpensesPage() {
 
   return (
     <ExpenseClientPage
-      initialExpenses={expenses as any}
+      initialExpenses={expenses}
       initialTotal={totalAmount}
       initialMonth={currentMonthStr}
       currentUserRole={session.user.role}
       currentUserId={session.user.id}
+      canCreate={hasPermission(session.user.role, "EXPENSES", "CREATE", session.user.permissions)}
+      canDelete={hasPermission(session.user.role, "EXPENSES", "DELETE", session.user.permissions)}
     />
   );
 }

@@ -38,8 +38,9 @@ export async function createExpense(data: CreateExpenseInput) {
       revalidatePath("/meals");
     }
     return result;
-  } catch (err: any) {
-    return { error: err.message };
+  } catch (err: unknown) {
+    console.error("Failed to create expense:", err);
+    return { error: err instanceof Error ? err.message : "Failed to create expense." };
   }
 }
 
@@ -54,10 +55,14 @@ export async function deleteExpense(id: string) {
       session.user.permissions,
       id
     );
-    if (result.success) revalidatePath("/expenses");
+    if (result.success) {
+      revalidatePath("/expenses");
+      revalidatePath("/meals");
+    }
     return result;
-  } catch (err: any) {
-    return { error: err.message };
+  } catch (err: unknown) {
+    console.error("Failed to delete expense:", err);
+    return { error: err instanceof Error ? err.message : "Failed to delete expense." };
   }
 }
 
