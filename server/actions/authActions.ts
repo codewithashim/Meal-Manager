@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import { signIn, signOut } from "@/auth";
 import { loginSchema, LoginInput } from "@/lib/validations/auth";
 import { AuthError } from "next-auth";
+import { redirect } from "next/navigation";
 
 export async function loginAction(data: LoginInput) {
   try {
@@ -47,5 +48,6 @@ export async function loginAction(data: LoginInput) {
 }
 
 export async function logoutAction() {
-  await signOut({ redirectTo: "/login" });
+  await signOut({ redirect: false });
+  redirect("/login");
 }
