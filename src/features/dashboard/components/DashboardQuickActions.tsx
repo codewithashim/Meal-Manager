@@ -12,6 +12,7 @@ import {
   LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
+import { useMonthHref } from "@/shared/hooks/useMonthParam";
 
 interface QuickActionItem {
   title: string;
@@ -34,6 +35,7 @@ export function DashboardQuickActions({
   pendingComplaints = 0,
   unpaidBills = 0,
 }: DashboardQuickActionsProps) {
+  const withMonth = useMonthHref();
   const adminActions: QuickActionItem[] = [
     {
       title: "Daily Meal Ledger",
@@ -131,7 +133,7 @@ export function DashboardQuickActions({
           return (
             <Link
               key={idx}
-              href={action.href}
+              href={withMonth(action.href)}
               className="glass-card glass-card-hover rounded-2xl p-4 border border-slate-800 flex items-center justify-between group transition-all"
             >
               <div className="flex items-center gap-3.5 min-w-0">

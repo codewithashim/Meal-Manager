@@ -2,9 +2,12 @@
 
 import { useCallback, useRef, useState, useTransition } from "react";
 import ExpenseModal from "@/features/expenses/components/ExpenseModal";
-import { Receipt, Plus, Search, Calendar, Filter, Trash2, ShoppingCart, Zap, Wifi, Home, Wrench } from "lucide-react";
+import { Receipt, Plus, Search, Filter, Trash2, ShoppingCart, Zap, Wifi, Home, Wrench } from "lucide-react";
 import { getExpenses, deleteExpense } from "@/server/actions/billingActions";
 import { toast } from "sonner";
+import MonthSelector from "@/shared/components/ui/MonthSelector";
+import { setMonthInUrl } from "@/shared/hooks/useMonthParam";
+import { formatMonthLabel } from "@/lib/month";
 
 interface ExpenseClientPageProps {
   initialExpenses: Awaited<ReturnType<typeof getExpenses>>["expenses"];
@@ -73,6 +76,7 @@ export default function ExpenseClientPage({
     if (!monthStr) return;
     filters.current.month = monthStr;
     setSelectedMonth(monthStr);
+    setMonthInUrl(monthStr);
     fetchExpenses(monthStr, categoryFilter);
   };
 
@@ -168,7 +172,7 @@ export default function ExpenseClientPage({
       {/* Total Expense Summary Card */}
       <div className="glass-card glass-card-hover rounded-2xl p-5 sm:p-6 border border-slate-800 flex items-center justify-between">
         <div>
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Expenses ({selectedMonth})</span>
+          <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Expenses ({formatMonthLabel(selectedMonth)})</span>
           <div className="text-2xl sm:text-3xl font-extrabold text-emerald-400 mt-1">{isPending ? "Loading..." : loadError ? "Unavailable" : `৳${totalAmount.toLocaleString()}`}</div>
           <p className="text-xs text-slate-400 mt-1">Total for the selected month and category; title search does not change this total.</p>
         </div>
@@ -197,16 +201,11 @@ export default function ExpenseClientPage({
         {/* Month Picker & Category Filter */}
         <div className="flex flex-col min-[400px]:flex-row items-stretch gap-2 sm:gap-3 w-full md:w-auto">
           
-          <div className="relative flex-1 sm:flex-initial flex items-center gap-2 bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-1.5 text-xs sm:text-sm text-white">
-            <Calendar className="w-4 h-4 text-emerald-400 shrink-0" />
-            <input
-              type="month"
-              aria-label="Expense month"
-              value={selectedMonth}
-              onChange={(e) => handleMonthChange(e.target.value)}
-              className="bg-transparent font-medium focus:outline-none cursor-pointer w-full"
-            />
-          </div>
+          <MonthSelector
+            value={selectedMonth}
+            onChange={handleMonthChange}
+            className="flex-1 sm:flex-initial justify-between"
+          />
 
           <div className="flex-1 sm:flex-initial flex items-center gap-2 bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-1.5 text-xs sm:text-sm text-slate-300">
             <Filter className="w-4 h-4 text-slate-400 shrink-0" />
@@ -361,7 +360,7 @@ export default function ExpenseClientPage({
         onClose={closeModal}
         onSuccess={(date, category) => {
           if (date.slice(0, 7) !== filters.current.month || (filters.current.category !== "ALL" && filters.current.category !== category)) {
-            toast.info("The expense was saved, but is outside the current month or category filter.");
+            toast.info("The expense was saved, but is outside the selected month or category filter.");
           }
           handleRefresh();
         }}

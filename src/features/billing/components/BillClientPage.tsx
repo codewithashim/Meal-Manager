@@ -8,7 +8,6 @@ import FullMonthlyReportModal from "@/features/billing/components/FullMonthlyRep
 import {
   FileSpreadsheet,
   Plus,
-  Calendar,
   CheckCircle2,
   AlertCircle,
   Clock,
@@ -23,6 +22,9 @@ import {
   FileText,
 } from "lucide-react";
 import { getMonthlyBills } from "@/server/actions/billingActions";
+import MonthSelector from "@/shared/components/ui/MonthSelector";
+import { setMonthInUrl } from "@/shared/hooks/useMonthParam";
+import { formatMonthLabel } from "@/lib/month";
 
 interface BillClientPageProps {
   initialBills: any[];
@@ -63,6 +65,7 @@ export default function BillClientPage({
 
   const handleMonthChange = (monthStr: string) => {
     setSelectedMonth(monthStr);
+    setMonthInUrl(monthStr);
     startTransition(async () => {
       const res = await getMonthlyBills(monthStr);
       setBills(res.bills);
@@ -148,7 +151,7 @@ export default function BillClientPage({
             </div>
           </div>
           <div className="text-2xl font-extrabold text-white mt-2">৳{totalBilled.toLocaleString()}</div>
-          <p className="text-xs text-slate-400 mt-1">Total invoiced amount for {selectedMonth}</p>
+          <p className="text-xs text-slate-400 mt-1">Total invoiced amount for {formatMonthLabel(selectedMonth)}</p>
         </div>
 
         <div className="glass-card glass-card-hover rounded-2xl p-4 sm:p-5 border border-slate-800/80 shadow-md">
@@ -212,16 +215,12 @@ export default function BillClientPage({
         </button>
 
         <div className="flex items-center justify-between sm:justify-end gap-2">
-          <span className="text-xs sm:text-sm font-semibold text-white">Select Billing Month:</span>
-          <div className="relative flex items-center gap-2 bg-slate-900 border border-slate-700/80 rounded-xl px-3 sm:px-4 py-2 text-white">
-            <Calendar className="w-4 h-4 text-blue-400 shrink-0" />
-            <input
-              type="month"
-              value={selectedMonth}
-              onChange={(e) => handleMonthChange(e.target.value)}
-              className="bg-transparent font-semibold text-xs sm:text-sm focus:outline-none cursor-pointer"
-            />
-          </div>
+          <span className="text-xs sm:text-sm font-semibold text-white">Billing Month</span>
+          <MonthSelector
+            value={selectedMonth}
+            onChange={handleMonthChange}
+            className="w-full sm:w-auto justify-between"
+          />
         </div>
       </div>
 
@@ -234,7 +233,7 @@ export default function BillClientPage({
       <div className="block md:hidden space-y-3.5">
         {bills.length === 0 ? (
           <div className="glass-card rounded-2xl p-8 text-center text-slate-500">
-            No monthly bills generated yet for {selectedMonth}.
+            No bills generated for {formatMonthLabel(selectedMonth)} yet.
           </div>
         ) : (
           bills.map((b) => {
@@ -334,7 +333,7 @@ export default function BillClientPage({
               {bills.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="px-6 py-8 text-center text-slate-500">
-                    No monthly bills generated yet for {selectedMonth}.
+                    No bills generated for {formatMonthLabel(selectedMonth)} yet.
                   </td>
                 </tr>
               ) : (

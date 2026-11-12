@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, UtensilsCrossed, FileSpreadsheet, Receipt, Menu } from "lucide-react";
+import { useMonthHref } from "@/shared/hooks/useMonthParam";
 
 interface BottomNavProps {
   onOpenDrawer: () => void;
@@ -10,6 +11,7 @@ interface BottomNavProps {
 
 export function BottomNav({ onOpenDrawer }: BottomNavProps) {
   const pathname = usePathname();
+  const withMonth = useMonthHref();
 
   const tabs = [
     { name: "Home", href: "/dashboard", icon: LayoutDashboard },
@@ -27,7 +29,7 @@ export function BottomNav({ onOpenDrawer }: BottomNavProps) {
         return (
           <Link
             key={tab.href}
-            href={tab.href}
+            href={withMonth(tab.href)}
             className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl text-[11px] font-medium transition ${
               isActive
                 ? "text-emerald-400 font-bold"

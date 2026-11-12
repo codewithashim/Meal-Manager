@@ -1,9 +1,12 @@
 "use client";
 
 import { Role } from "@prisma/client";
+import { useRouter } from "next/navigation";
 import { Sparkles, Calendar, Building2, ShieldCheck, UserCheck, UtensilsCrossed, Plus, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { QuickMealToggle } from "./QuickMealToggle";
+import MonthSelector from "@/shared/components/ui/MonthSelector";
+import { useMonthHref } from "@/shared/hooks/useMonthParam";
 
 interface DashboardHeaderProps {
   userName: string;
@@ -12,6 +15,8 @@ interface DashboardHeaderProps {
   mealStatus: boolean;
   messName?: string;
   roomInfo?: string | null;
+  selectedMonth: string;
+  currentMonth: string;
 }
 
 export function DashboardHeader({
@@ -21,7 +26,17 @@ export function DashboardHeader({
   mealStatus,
   messName = "Meal Manager Boarding",
   roomInfo,
+  selectedMonth,
+  currentMonth,
 }: DashboardHeaderProps) {
+  const router = useRouter();
+  const withMonth = useMonthHref();
+
+  const handleMonthChange = (monthStr: string) => {
+    // Keep the URL clean for the default (current) month.
+    router.replace(monthStr === currentMonth ? "/dashboard" : `/dashboard?month=${monthStr}`, { scroll: false });
+  };
+
   // Get time of day greeting
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -77,8 +92,14 @@ export function DashboardHeader({
             </p>
           </div>
 
-          {/* Role pill & Header Quick Actions */}
+          {/* Month selector & Header Quick Actions */}
           <div className="flex flex-col sm:flex-row lg:flex-col items-start lg:items-end gap-3 shrink-0">
+            <MonthSelector
+              value={selectedMonth}
+              onChange={handleMonthChange}
+              className="w-full sm:w-auto justify-between"
+            />
+
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-2xl bg-slate-950/80 border border-slate-800 text-xs font-semibold text-slate-300 shadow-inner">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               Role:{" "}
@@ -90,7 +111,7 @@ export function DashboardHeader({
             {/* Role specific Header button */}
             {userRole === Role.USER ? (
               <Link
-                href="/meals"
+                href={withMonth("/meals")}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition shadow-lg shadow-emerald-600/20"
               >
                 <UtensilsCrossed className="w-4 h-4" />
@@ -100,14 +121,14 @@ export function DashboardHeader({
             ) : (
               <div className="flex items-center gap-2">
                 <Link
-                  href="/meals"
+                  href={withMonth("/meals")}
                   className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition shadow-md"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Meal Ledger</span>
                 </Link>
                 <Link
-                  href="/expenses"
+                  href={withMonth("/expenses")}
                   className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold transition"
                 >
                   <Plus className="w-3.5 h-3.5" />

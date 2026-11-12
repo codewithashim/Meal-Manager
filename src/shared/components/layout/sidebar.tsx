@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Role } from "@prisma/client";
 import { hasPermission, Resource } from "@/lib/permissions";
+import { useMonthHref } from "@/shared/hooks/useMonthParam";
 import {
   LayoutDashboard,
   Users,
@@ -47,6 +48,7 @@ const ALL_NAV_ITEMS: NavItem[] = [
 
 export function DashboardSidebar({ role, userName, permissions = [] }: SidebarProps) {
   const pathname = usePathname();
+  const withMonth = useMonthHref();
 
   // Filter single navbar based on RBAC & user permissions
   const navItems = ALL_NAV_ITEMS.filter((item) => {
@@ -77,7 +79,7 @@ export function DashboardSidebar({ role, userName, permissions = [] }: SidebarPr
             return (
               <Link
                 key={item.href}
-                href={item.href}
+                href={withMonth(item.href)}
                 className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   isActive
                     ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-bold"

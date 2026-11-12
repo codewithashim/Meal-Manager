@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { Calendar, Utensils, DollarSign, Calculator, FileSpreadsheet } from "lucide-react";
+import { Utensils, DollarSign, Calculator, FileSpreadsheet } from "lucide-react";
 import { getMonthlyMealSummary } from "@/server/actions/mealActions";
+import MonthSelector from "@/shared/components/ui/MonthSelector";
+import { setMonthInUrl } from "@/shared/hooks/useMonthParam";
 import { toast } from "sonner";
 
 interface UserMonthlySummary {
@@ -40,6 +42,7 @@ export default function MonthlyMealSummary({ initialMonth, initialSummary }: Mon
     if (!monthStr) return;
     const currentRequest = ++requestId.current;
     setSelectedMonth(monthStr);
+    setMonthInUrl(monthStr);
     setLoading(true);
     startTransition(async () => {
       try {
@@ -90,15 +93,11 @@ export default function MonthlyMealSummary({ initialMonth, initialSummary }: Mon
         </div>
 
         <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-          <div className="relative flex items-center gap-2 bg-slate-900 border border-slate-700/80 rounded-xl px-4 py-2 text-white w-full sm:w-auto">
-            <Calendar className="w-4 h-4 text-emerald-400" />
-            <input
-              type="month"
-              value={selectedMonth}
-              onChange={(e) => handleMonthChange(e.target.value)}
-              className="bg-transparent font-medium text-xs sm:text-sm focus:outline-none cursor-pointer w-full"
-            />
-          </div>
+          <MonthSelector
+            value={selectedMonth}
+            onChange={handleMonthChange}
+            className="w-full sm:w-auto justify-between"
+          />
         </div>
       </div>
 

@@ -8,6 +8,7 @@ import {
   generateBillsSchema,
   recordPaymentSchema,
 } from "@/lib/validations/billing";
+import { getMessMonthStr, getMonthRange, getPreviousMonthStr } from "@/lib/month";
 
 function parseDateString(dateStr: string): Date {
   const [year, month, day] = dateStr.split("-").map(Number);
@@ -94,10 +95,8 @@ export class BillingService {
   ) {
     PermissionService.enforce(actorRole, "BILLS", "READ", actorPermissions);
 
-    const targetMonth = monthStr || new Date().toISOString().slice(0, 7);
-    const [year, mNum] = targetMonth.split("-").map(Number);
-    const startDate = new Date(Date.UTC(year, mNum - 1, 1));
-    const endDate = new Date(Date.UTC(year, mNum, 0, 23, 59, 59));
+    const targetMonth = monthStr || getMessMonthStr();
+    const { start: startDate, end: endDate } = getMonthRange(targetMonth);
 
     const activeUsersCount = await db.user.count({
       where: { status: "ACTIVE", role: { not: Role.ADMIN } },
@@ -159,6 +158,14 @@ export class BillingService {
       return { error: parsed.error.issues[0].message };
     }
 
+    return BillingService.buildMonthlyBills(actorId, parsed.data);
+  }
+
+  // Assumes the caller has already checked permissions and validated `data`.
+  private static async buildMonthlyBills(
+    actorId: string,
+    data: GenerateBillsInput
+  ): Promise<ServiceResult> {
     const {
       month,
       utilitySharePerMember,
@@ -169,11 +176,9 @@ export class BillingService {
       khalaBill = 0,
       wifiBill = 0,
       isTotalMessBills = true,
-    } = parsed.data;
+    } = data;
 
-    const [year, mNum] = month.split("-").map(Number);
-    const startDate = new Date(Date.UTC(year, mNum - 1, 1));
-    const endDate = new Date(Date.UTC(year, mNum, 0, 23, 59, 59));
+    const { start: startDate, end: endDate } = getMonthRange(month);
 
     const foodExpenses = await db.expense.aggregate({
       where: {
@@ -314,6 +319,41 @@ export class BillingService {
     });
 
     return { success: true, count: users.length, mealRate };
+  }
+
+  // Closes the previous month automatically: creates its bills once, using the month's recorded expenses.
+  public static async ensureMonthlyBills(actorId: string): Promise<void> {
+    if (!actorId) return;
+
+    const month = getPreviousMonthStr(getMessMonthStr());
+    const existingBills = await db.monthlyBill.count({ where: { month } });
+    if (existingBills > 0) return;
+
+    const activeMembers = await db.user.count({
+      where: { status: "ACTIVE", role: { not: Role.ADMIN } },
+    });
+    if (activeMembers === 0) return;
+
+    const { start, end } = getMonthRange(month);
+    const expenseTotals = await db.expense.groupBy({
+      by: ["category"],
+      where: { date: { gte: start, lte: end } },
+      _sum: { amount: true },
+    });
+    const totalFor = (category: string) =>
+      expenseTotals.find((e) => e.category === category)?._sum.amount || 0;
+
+    await BillingService.buildMonthlyBills(actorId, {
+      month,
+      utilitySharePerMember: 0,
+      otherChargesPerMember: 0,
+      electricityBill: totalFor("ELECTRICITY"),
+      gasBill: totalFor("GAS"),
+      waterBill: totalFor("WATER"),
+      khalaBill: totalFor("STAFF_SALARY"),
+      wifiBill: totalFor("INTERNET"),
+      isTotalMessBills: true,
+    });
   }
 
   public static async getPayments(

@@ -1,6 +1,7 @@
 "use client";
 
 import { Role } from "@prisma/client";
+import { formatMonthLabel } from "@/lib/month";
 import { DashboardHeader } from "./DashboardHeader";
 import { DashboardKpiCards } from "./DashboardKpiCards";
 import { DashboardQuickActions } from "./DashboardQuickActions";
@@ -43,6 +44,8 @@ interface TodayUserMeal {
 }
 
 interface DashboardClientViewProps {
+  selectedMonth: string;
+  currentMonth: string;
   userName: string;
   userRole: Role;
   userId: string;
@@ -95,6 +98,8 @@ interface DashboardClientViewProps {
 }
 
 export function DashboardClientView({
+  selectedMonth,
+  currentMonth,
   userName,
   userRole,
   userId,
@@ -108,6 +113,8 @@ export function DashboardClientView({
   latestNotices,
   todayBoarders,
 }: DashboardClientViewProps) {
+  const monthLabel = formatMonthLabel(selectedMonth);
+
   return (
     <div className="space-y-6 sm:space-y-8 animate-fadeIn max-w-7xl mx-auto">
       {/* 1. Header & Greeting Banner */}
@@ -118,10 +125,12 @@ export function DashboardClientView({
         mealStatus={mealStatus}
         messName={messName}
         roomInfo={roomInfo}
+        selectedMonth={selectedMonth}
+        currentMonth={currentMonth}
       />
 
       {/* 2. Highlight KPI Scorecards */}
-      <DashboardKpiCards role={userRole} adminKpis={adminKpis} userKpis={userKpis} />
+      <DashboardKpiCards role={userRole} adminKpis={adminKpis} userKpis={userKpis} monthLabel={monthLabel} />
 
       {/* 3. Quick Action Navigation Bar */}
       <DashboardQuickActions
@@ -136,6 +145,7 @@ export function DashboardClientView({
         pendingComplaints={pendingComplaints}
         latestNotices={latestNotices}
         todayBoarders={todayBoarders}
+        monthLabel={monthLabel}
       />
     </div>
   );
