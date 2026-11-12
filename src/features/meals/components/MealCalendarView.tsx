@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from "react";
 import {
-  ChevronLeft,
-  ChevronRight,
   Calendar as CalendarIcon,
   Utensils,
   Users,
@@ -15,6 +13,9 @@ import {
 } from "lucide-react";
 import AppDrawer from "@/shared/components/ui/AppDrawer";
 import MealDayEditor from "@/features/meals/components/MealDayEditor";
+import MonthSelector from "@/shared/components/ui/MonthSelector";
+import { setMonthInUrl } from "@/shared/hooks/useMonthParam";
+import { getMessDateStr } from "@/lib/month";
 import { getDailyMeals, getMessMonthDailyRecords, bulkSaveDailyMeals } from "@/server/actions/mealActions";
 import { toast } from "sonner";
 
@@ -34,6 +35,10 @@ export default function MealCalendarView({
   const isManagerOrAdmin = currentUserRole === "ADMIN" || currentUserRole === "MANAGER";
   
   const [selectedMonth, setSelectedMonth] = useState(initialMonth); // YYYY-MM
+  const handleMonthChange = (monthStr: string) => {
+    setSelectedMonth(monthStr);
+    setMonthInUrl(monthStr);
+  };
   const [selectedUserFilter, setSelectedUserFilter] = useState<string>("ALL");
   const [viewMode, setViewMode] = useState<"AGENDA" | "GRID">("AGENDA"); // "AGENDA" (mobile friendly list) or "GRID"
   
@@ -101,24 +106,7 @@ export default function MealCalendarView({
   const daysInMonth = new Date(Date.UTC(yearNum, monthNum, 0)).getDate();
   const firstDayOfWeek = new Date(Date.UTC(yearNum, monthNum - 1, 1)).getUTCDay(); // 0 = Sun
 
-  const todayStr = new Date().toISOString().split("T")[0];
-
-  const handlePrevMonth = () => {
-    const prevDate = new Date(Date.UTC(yearNum, monthNum - 2, 1));
-    const prevStr = prevDate.toISOString().substring(0, 7);
-    setSelectedMonth(prevStr);
-  };
-
-  const handleNextMonth = () => {
-    const nextDate = new Date(Date.UTC(yearNum, monthNum, 1));
-    const nextStr = nextDate.toISOString().substring(0, 7);
-    setSelectedMonth(nextStr);
-  };
-
-  const handleTodayClick = () => {
-    const curStr = new Date().toISOString().substring(0, 7);
-    setSelectedMonth(curStr);
-  };
+  const todayStr = getMessDateStr();
 
   // Filter records by member if a specific user is selected
   const filteredRecords = selectedUserFilter === "ALL"
@@ -206,44 +194,14 @@ export default function MealCalendarView({
         
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           
-          {/* Month & Nav Buttons */}
+          {/* Month Selector */}
           <div className="flex items-center gap-2.5 w-full sm:w-auto justify-between sm:justify-start">
-            <div className="flex items-center gap-1 bg-slate-900 border border-slate-700/80 rounded-xl p-1">
-              <button
-                onClick={handlePrevMonth}
-                disabled={inspecting}
-                className="p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition cursor-pointer"
-                title="Previous Month"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-
-              <button
-                onClick={handleTodayClick}
-                disabled={inspecting}
-                className="px-3 py-1.5 text-xs font-semibold text-blue-400 hover:bg-slate-800 rounded-lg transition cursor-pointer"
-              >
-                Today
-              </button>
-
-              <button
-                onClick={handleNextMonth}
-                disabled={inspecting}
-                className="p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition cursor-pointer"
-                title="Next Month"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
-
-            <h2 className="text-sm sm:text-lg font-bold text-white tracking-tight flex items-center gap-2 min-w-0">
-              <CalendarIcon className="w-5 h-5 text-emerald-400 shrink-0" />
-              {new Date(Date.UTC(yearNum, monthNum - 1, 1)).toLocaleDateString("en-US", {
-                month: "long",
-                year: "numeric",
-                timeZone: "UTC",
-              })}
-            </h2>
+            <MonthSelector
+              value={selectedMonth}
+              onChange={handleMonthChange}
+              disabled={inspecting}
+              className="w-full sm:w-auto justify-between"
+            />
           </div>
 
           {/* Member Filter Selector & View Mode Switcher */}

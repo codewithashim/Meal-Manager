@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { getDailyMeals, getMonthlyMealSummary } from "@/server/actions/mealActions";
+import { getMessDateStr, getMessMonthStr, resolveMonthParam } from "@/lib/month";
 import MealClientPage from "@/features/meals/components/MealClientPage";
 
 export const metadata = {
@@ -8,15 +9,16 @@ export const metadata = {
   description: "Track daily meals, monthly totals, and meal rate calculations.",
 };
 
-export default async function MealsPage() {
+export default async function MealsPage({ searchParams }: { searchParams: Promise<{ month?: string }> }) {
   const session = await auth();
 
   if (!session?.user) {
     redirect("/login");
   }
 
-  const todayStr = new Date().toISOString().split("T")[0];
-  const currentMonthStr = todayStr.substring(0, 7); // YYYY-MM
+  const { month } = await searchParams;
+  const todayStr = getMessDateStr();
+  const currentMonthStr = resolveMonthParam(month, getMessMonthStr());
 
   const dailyData = await getDailyMeals(todayStr);
   const monthlyData = session.user.role === "USER" ? null : await getMonthlyMealSummary(currentMonthStr);

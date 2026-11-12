@@ -1,6 +1,7 @@
 import { db } from "@/services/db.service";
 import { PermissionService } from "@/services/permission.service";
 import { AuditService } from "@/services/audit.service";
+import { getMessDateStr } from "@/lib/month";
 import { Role, type MealRecord } from "@prisma/client";
 import {
   SaveMealRecordInput,
@@ -29,7 +30,7 @@ export class MealService {
   ) {
     PermissionService.enforce(actorRole, "MEALS", "READ", actorPermissions);
 
-    const todayStr = mealDateSchema.parse(dateStr ?? new Date().toISOString().split("T")[0]);
+    const todayStr = mealDateSchema.parse(dateStr ?? getMessDateStr());
     const targetDate = parseDateString(todayStr);
 
     const users = await db.user.findMany({

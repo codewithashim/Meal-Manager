@@ -19,6 +19,7 @@ import {
   Moon,
 } from "lucide-react";
 import Link from "next/link";
+import { useMonthHref } from "@/shared/hooks/useMonthParam";
 
 interface AdminKpiProps {
   estimatedMealRate: number;
@@ -65,9 +66,11 @@ interface DashboardKpiCardsProps {
   role: Role;
   adminKpis: AdminKpiProps;
   userKpis: UserKpiProps;
+  monthLabel: string;
 }
 
-export function DashboardKpiCards({ role, adminKpis, userKpis }: DashboardKpiCardsProps) {
+export function DashboardKpiCards({ role, adminKpis, userKpis, monthLabel }: DashboardKpiCardsProps) {
+  const withMonth = useMonthHref();
   if (role === Role.USER) {
     const bill = userKpis.myCurrentBill;
     const seat = userKpis.mySeatInfo;
@@ -90,7 +93,7 @@ export function DashboardKpiCards({ role, adminKpis, userKpis }: DashboardKpiCar
           <div>
             <div className="flex items-baseline gap-2">
               <h3 className="text-3xl font-black text-white">{userKpis.myTotalMeals}</h3>
-              <span className="text-xs font-semibold text-slate-400">meals this month</span>
+              <span className="text-xs font-semibold text-slate-400">meals in {monthLabel}</span>
             </div>
             <p className="text-xs text-slate-400 mt-2 flex items-center gap-1">
               Est. Meal Cost:{" "}
@@ -171,11 +174,11 @@ export function DashboardKpiCards({ role, adminKpis, userKpis }: DashboardKpiCar
             <p className="text-xs text-slate-400 mt-2">
               {bill
                 ? `Total Bill: ৳${bill.totalBill.toLocaleString()} (Paid: ৳${bill.totalPaid.toLocaleString()})`
-                : "No bill generated for this month"}
+                : `No bill generated for ${monthLabel}`}
             </p>
           </div>
           <Link
-            href="/bills"
+            href={withMonth("/bills")}
             className="inline-flex items-center gap-1 text-xs font-bold text-blue-400 hover:text-blue-300 transition"
           >
             <span>View Bill Statement</span>

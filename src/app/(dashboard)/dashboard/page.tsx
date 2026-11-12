@@ -2,6 +2,8 @@ import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { Role } from "@prisma/client";
 import { DashboardClientView } from "@/features/dashboard/components/DashboardClientView";
+import { BillingService } from "@/features/billing/services/billing.service";
+import { getMessDateStr, getMessMonthStr, getMonthRange, resolveMonthParam } from "@/lib/month";
 
 export const metadata = {
   title: "Dashboard | Meal Manager System",
@@ -9,7 +11,11 @@ export const metadata = {
     "Real-time meal management dashboard, live meal rate calculation, seat allocation & operational overview.",
 };
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ month?: string }>;
+}) {
   const session = await auth();
   const userId = session?.user?.id || "";
   const role = session?.user?.role || Role.USER;
@@ -17,12 +23,12 @@ export default async function DashboardPage() {
 
   // Date strings
   const now = new Date();
-  const currentMonthStr = now.toISOString().substring(0, 7); // YYYY-MM
-  const todayStr = now.toISOString().split("T")[0]; // YYYY-MM-DD
+  const currentMonthStr = getMessMonthStr(now); // YYYY-MM in mess timezone
+  const { month: monthParam } = await searchParams;
+  const selectedMonth = resolveMonthParam(monthParam, currentMonthStr);
+  const todayStr = getMessDateStr(now); // YYYY-MM-DD in mess timezone
 
-  const [year, month] = currentMonthStr.split("-").map(Number);
-  const startOfMonth = new Date(Date.UTC(year, month - 1, 1));
-  const endOfMonth = new Date(Date.UTC(year, month, 0, 23, 59, 59));
+  const { start: startOfMonth, end: endOfMonth } = getMonthRange(selectedMonth);
 
   const [tYear, tMonth, tDay] = todayStr.split("-").map(Number);
   const startOfToday = new Date(Date.UTC(tYear, tMonth - 1, tDay, 0, 0, 0));
@@ -56,6 +62,11 @@ export default async function DashboardPage() {
   let myPendingComplaints = 0;
 
   try {
+    // Generates the previous month's bills once, on the first visit of a new month.
+    await BillingService.ensureMonthlyBills(userId).catch((err) =>
+      console.error("Failed to auto-generate monthly bills:", err)
+    );
+
     const [
       settingRes,
       uCountRes,
@@ -100,7 +111,7 @@ export default async function DashboardPage() {
         .catch(() => ({ _sum: { amount: 0 } })),
       db.payment
         .aggregate({
-          where: { month: currentMonthStr },
+          where: { month: selectedMonth },
           _sum: { amount: true },
         })
         .catch(() => ({ _sum: { amount: 0 } })),
@@ -111,7 +122,7 @@ export default async function DashboardPage() {
         })
         .catch(() => ({ _sum: { totalMeals: 0 } })),
       db.complaint.count({ where: { status: "PENDING" } }).catch(() => 0),
-      db.monthlyBill.count({ where: { status: { in: ["UNPAID", "OVERDUE"] } } }).catch(() => 0),
+      db.monthlyBill.count({ where: { month: selectedMonth, status: { in: ["UNPAID", "OVERDUE"] } } }).catch(() => 0),
       db.mealRecord
         .findMany({
           where: { date: { gte: startOfToday, lte: endOfToday } },
@@ -120,6 +131,7 @@ export default async function DashboardPage() {
         .catch(() => []),
       db.expense
         .findMany({
+          where: { date: { gte: startOfMonth, lte: endOfMonth } },
           orderBy: { date: "desc" },
           take: 5,
         })
@@ -161,7 +173,7 @@ export default async function DashboardPage() {
       userId
         ? db.monthlyBill
             .findUnique({
-              where: { userId_month: { userId, month: currentMonthStr } },
+              where: { userId_month: { userId, month: selectedMonth } },
             })
             .catch(() => null)
         : Promise.resolve(null),
@@ -305,6 +317,8 @@ export default async function DashboardPage() {
 
   return (
     <DashboardClientView
+      selectedMonth={selectedMonth}
+      currentMonth={currentMonthStr}
       userName={userName}
       userRole={role}
       userId={userId}

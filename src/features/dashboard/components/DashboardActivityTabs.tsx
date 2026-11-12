@@ -15,6 +15,7 @@ import {
   Calendar,
 } from "lucide-react";
 import Link from "next/link";
+import { useMonthHref } from "@/shared/hooks/useMonthParam";
 
 interface ExpenseItem {
   id: string;
@@ -57,6 +58,7 @@ interface DashboardActivityTabsProps {
   pendingComplaints: ComplaintItem[];
   latestNotices: NoticeItem[];
   todayBoarders: TodayUserMeal[];
+  monthLabel: string;
 }
 
 export function DashboardActivityTabs({
@@ -64,7 +66,9 @@ export function DashboardActivityTabs({
   pendingComplaints,
   latestNotices,
   todayBoarders,
+  monthLabel,
 }: DashboardActivityTabsProps) {
+  const withMonth = useMonthHref();
   const [activeTab, setActiveTab] = useState<"expenses" | "boarders" | "complaints" | "notices">(
     "expenses"
   );
@@ -140,7 +144,7 @@ export function DashboardActivityTabs({
         <div className="space-y-3">
           {recentExpenses.length === 0 ? (
             <div className="text-center py-8 text-slate-500 text-xs font-medium">
-              No recent expenses logged for this month.
+              No recent expenses logged for {monthLabel}.
             </div>
           ) : (
             <div className="divide-y divide-slate-800/60">
@@ -173,7 +177,7 @@ export function DashboardActivityTabs({
 
           <div className="pt-2 border-t border-slate-800/80 flex justify-end">
             <Link
-              href="/expenses"
+              href={withMonth("/expenses")}
               className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 hover:text-amber-300 transition"
             >
               <span>View All Expenses</span>
@@ -225,7 +229,7 @@ export function DashboardActivityTabs({
 
           <div className="pt-2 border-t border-slate-800/80 flex justify-end">
             <Link
-              href="/meals"
+              href={withMonth("/meals")}
               className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400 hover:text-emerald-300 transition"
             >
               <span>Open Meal Ledger</span>

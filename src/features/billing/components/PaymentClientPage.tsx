@@ -2,8 +2,11 @@
 
 import { useState, useTransition } from "react";
 import RecordPaymentModal from "@/features/billing/components/RecordPaymentModal";
-import { Wallet, Plus, Calendar, Search, CheckCircle2 } from "lucide-react";
+import { Wallet, Plus, Search, CheckCircle2 } from "lucide-react";
 import { getPayments } from "@/server/actions/billingActions";
+import MonthSelector from "@/shared/components/ui/MonthSelector";
+import { setMonthInUrl } from "@/shared/hooks/useMonthParam";
+import { formatMonthLabel } from "@/lib/month";
 
 interface PaymentClientPageProps {
   initialPayments: any[];
@@ -30,6 +33,7 @@ export default function PaymentClientPage({
 
   const handleMonthChange = (monthStr: string) => {
     setSelectedMonth(monthStr);
+    setMonthInUrl(monthStr);
     startTransition(async () => {
       const res = await getPayments(monthStr);
       setPayments(res.payments);
@@ -104,7 +108,7 @@ export default function PaymentClientPage({
       {/* Total Collected KPI Card */}
       <div className="glass-card glass-card-hover rounded-2xl p-5 sm:p-6 border border-slate-800 flex items-center justify-between">
         <div>
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Collected ({selectedMonth})</span>
+          <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Collected ({formatMonthLabel(selectedMonth)})</span>
           <div className="text-2xl sm:text-3xl font-extrabold text-emerald-400 mt-1">৳{totalCollected.toLocaleString()}</div>
           <p className="text-xs text-slate-400 mt-1">Received member payments for selected month</p>
         </div>
@@ -128,15 +132,7 @@ export default function PaymentClientPage({
           />
         </div>
 
-        <div className="relative flex items-center gap-2 bg-slate-900 border border-slate-700/80 rounded-xl px-4 py-2 text-white w-full md:w-auto">
-          <Calendar className="w-4 h-4 text-emerald-400" />
-          <input
-            type="month"
-            value={selectedMonth}
-            onChange={(e) => handleMonthChange(e.target.value)}
-            className="bg-transparent font-medium text-xs sm:text-sm focus:outline-none cursor-pointer w-full"
-          />
-        </div>
+        <MonthSelector value={selectedMonth} onChange={handleMonthChange} className="w-full md:w-auto justify-between" />
 
       </div>
 

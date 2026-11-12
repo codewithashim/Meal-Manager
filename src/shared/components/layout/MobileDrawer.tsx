@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { Role } from "@prisma/client";
 import { X, UtensilsCrossed, LogOut } from "lucide-react";
 import { logoutAction } from "@/server/actions/authActions";
+import { useMonthHref } from "@/shared/hooks/useMonthParam";
 
 interface MobileDrawerProps {
   isOpen: boolean;
@@ -19,6 +20,7 @@ interface MobileDrawerProps {
 export function MobileDrawer({ isOpen, onClose, role, userName, navItems }: MobileDrawerProps) {
   const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
+  const withMonth = useMonthHref();
 
   useEffect(() => {
     setMounted(true);
@@ -66,7 +68,7 @@ export function MobileDrawer({ isOpen, onClose, role, userName, navItems }: Mobi
               return (
                 <Link
                   key={item.href}
-                  href={item.href}
+                  href={withMonth(item.href)}
                   onClick={onClose}
                   className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
                     isActive

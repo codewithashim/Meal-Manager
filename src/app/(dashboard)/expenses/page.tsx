@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { getExpenses } from "@/server/actions/billingActions";
+import { getMessMonthStr, resolveMonthParam } from "@/lib/month";
 import ExpenseClientPage from "@/features/expenses/components/ExpenseClientPage";
 import { hasPermission } from "@/lib/permissions";
 
@@ -9,14 +10,15 @@ export const metadata = {
   description: "Track daily bazaar spending, utility bills, and operational expenses.",
 };
 
-export default async function ExpensesPage() {
+export default async function ExpensesPage({ searchParams }: { searchParams: Promise<{ month?: string }> }) {
   const session = await auth();
 
   if (!session?.user) {
     redirect("/login");
   }
 
-  const currentMonthStr = new Date().toISOString().substring(0, 7); // YYYY-MM
+  const { month } = await searchParams;
+  const currentMonthStr = resolveMonthParam(month, getMessMonthStr());
   const { expenses, totalAmount } = await getExpenses(currentMonthStr);
 
   return (

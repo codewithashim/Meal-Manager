@@ -74,6 +74,8 @@ export async function getMonthlyBills(monthStr?: string) {
   const session = await auth();
   if (!session?.user) throw new Error("Unauthorized");
 
+  await BillingService.ensureMonthlyBills(session.user.id);
+
   return await BillingService.getMonthlyBills(
     session.user.role,
     session.user.permissions,

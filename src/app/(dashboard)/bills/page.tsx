@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { getMonthlyBills } from "@/server/actions/billingActions";
+import { getMessMonthStr, getPreviousMonthStr, resolveMonthParam } from "@/lib/month";
 import BillClientPage from "@/features/billing/components/BillClientPage";
 
 export const metadata = {
@@ -8,15 +9,16 @@ export const metadata = {
   description: "View itemized monthly bills, meal costs, room rent, and payment status.",
 };
 
-export default async function BillsPage() {
+export default async function BillsPage({ searchParams }: { searchParams: Promise<{ month?: string }> }) {
   const session = await auth();
 
   if (!session?.user) {
     redirect("/login");
   }
 
-  const currentMonthStr = new Date().toISOString().substring(0, 7); // YYYY-MM
-  const { bills, totalBilled, totalCollected, totalDue, messSummary } = await getMonthlyBills(currentMonthStr);
+  const { month } = await searchParams;
+  const billMonthStr = resolveMonthParam(month, getPreviousMonthStr(getMessMonthStr()));
+  const { bills, totalBilled, totalCollected, totalDue, messSummary } = await getMonthlyBills(billMonthStr);
 
   return (
     <BillClientPage
@@ -25,7 +27,7 @@ export default async function BillsPage() {
       initialCollected={totalCollected}
       initialDue={totalDue}
       initialMessSummary={messSummary}
-      initialMonth={currentMonthStr}
+      initialMonth={billMonthStr}
       currentUserRole={session.user.role}
       currentUserId={session.user.id}
     />
