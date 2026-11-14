@@ -128,3 +128,120 @@ body {
   }
 }
 
+
+/* ---------- Landing page motion ---------- */
+@keyframes heroIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes previewIn {
+  from { opacity: 0; transform: perspective(2000px) rotateX(18deg) translateY(40px) scale(0.96); }
+  to { opacity: 1; transform: perspective(2000px) rotateX(0deg) translateY(0) scale(1); }
+}
+
+@keyframes aurora {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  33% { transform: translate3d(6%, 4%, 0) scale(1.08); }
+  66% { transform: translate3d(-5%, 2%, 0) scale(0.95); }
+}
+
+@keyframes floatY {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes chipIn {
+  from { opacity: 0; transform: translateY(16px) scale(0.92); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@keyframes cellGlow {
+  0%, 70%, 100% { background-color: rgba(255, 255, 255, 0.02); border-color: rgba(255, 255, 255, 0.05); }
+  10% { background-color: rgba(16, 185, 129, 0.16); border-color: rgba(52, 211, 153, 0.35); }
+}
+
+@keyframes tickerUp {
+  from { transform: translateY(0); }
+  to { transform: translateY(-50%); }
+}
+
+@keyframes statusCycle {
+  0%, 30% { opacity: 1; transform: none; }
+  33%, 97% { opacity: 0.25; transform: scale(0.96); }
+  100% { opacity: 1; transform: none; }
+}
+
+@keyframes seatPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.45); }
+  50% { box-shadow: 0 0 0 6px rgba(52, 211, 153, 0); }
+}
+
+@keyframes beamDown {
+  from { transform: translateY(-100%); }
+  to { transform: translateY(300%); }
+}
+
+@keyframes spinSlow {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes barGrow {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+
+@keyframes livePing {
+  75%, 100% { transform: scale(2.2); opacity: 0; }
+}
+
+/* Scroll reveal, driven by Reveal.tsx */
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
+[data-reveal][data-visible="true"] {
+  opacity: 1;
+  transform: none;
+}
+
+/* Cursor-following spotlight on feature cards */
+.spotlight {
+  position: relative;
+  isolation: isolate;
+}
+
+.spotlight::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: radial-gradient(420px circle at var(--spot-x, 50%) var(--spot-y, 0%), rgba(16, 185, 129, 0.12), transparent 45%);
+  opacity: 0;
+  transition: opacity 0.3s ease-out;
+  content: "";
+}
+
+.spotlight:hover::before {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .motion-loop {
+    animation: none !important;
+  }
+}
