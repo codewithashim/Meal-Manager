@@ -41,7 +41,7 @@ export function MobileDrawer({ isOpen, onClose, role, userName, navItems }: Mobi
         <div>
           {/* Brand Header */}
           <div className="flex items-center justify-between px-2 py-3 mb-4 border-b border-slate-800">
-            <div className="flex items-center gap-2.5">
+            <Link href="/" onClick={onClose} title="Go to home page" className="flex items-center gap-2.5">
               <div className="p-2 bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/20">
                 <UtensilsCrossed className="w-5 h-5" />
               </div>
@@ -49,7 +49,7 @@ export function MobileDrawer({ isOpen, onClose, role, userName, navItems }: Mobi
                 <h2 className="font-extrabold text-white text-base leading-tight">Meal Manager</h2>
                 <span className="text-[10px] text-emerald-400 font-mono block uppercase">{role}</span>
               </div>
-            </div>
+            </Link>
 
             <button
               onClick={onClose}

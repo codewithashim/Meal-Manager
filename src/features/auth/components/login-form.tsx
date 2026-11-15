@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { loginAction } from "@/server/actions/authActions";
 import { ArrowRight, ShieldCheck, AlertCircle, Loader2, User, LockKeyhole, Eye, EyeOff, UtensilsCrossed } from "lucide-react";
@@ -44,7 +45,7 @@ export function LoginForm() {
   return (
     <div className={styles.card}>
       <div className={styles.intro}>
-        <div className={styles.brand}>
+        <Link href="/" className={styles.brand} title="Go to home page">
           <div className={styles.brandIcon}>
             <UtensilsCrossed aria-hidden="true" className="h-6 w-6" />
           </div>
@@ -52,7 +53,7 @@ export function LoginForm() {
             <p className={styles.brandName}>Meal Manager</p>
             <p className={styles.brandCaption}>Residential mess portal</p>
           </div>
-        </div>
+        </Link>
         <p className={styles.eyebrow}>Your account</p>
         <h1 className={styles.title}>
           Welcome back

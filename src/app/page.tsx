@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { auth } from "@/auth";
-import { redirect } from "next/navigation";
 import { LandingPage } from "@/features/landing/components/LandingPage";
 
 export const metadata: Metadata = {
@@ -15,10 +14,7 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
+  // Signed-in members can come back to the home page; its links then lead to the dashboard instead of sign-in.
   const session = await auth();
-  if (session?.user) {
-    redirect("/dashboard");
-  }
-
-  return <LandingPage />;
+  return <LandingPage isSignedIn={!!session?.user} userName={session?.user?.name ?? undefined} />;
 }

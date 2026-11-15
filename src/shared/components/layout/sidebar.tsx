@@ -62,7 +62,7 @@ export function DashboardSidebar({ role, userName, permissions = [] }: SidebarPr
     <aside className="w-64 bg-slate-900 border-r border-slate-800 h-screen sticky top-0 flex flex-col justify-between p-4 shrink-0">
       <div>
         {/* Brand Logo */}
-        <div className="flex items-center gap-3 px-3 py-4 mb-6 border-b border-slate-800">
+        <Link href="/" title="Go to home page" className="flex items-center gap-3 px-3 py-4 mb-6 border-b border-slate-800 hover:opacity-90 transition">
           <div className="p-2 bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/20">
             <UtensilsCrossed className="w-6 h-6" />
           </div>
@@ -70,7 +70,7 @@ export function DashboardSidebar({ role, userName, permissions = [] }: SidebarPr
             <h2 className="font-extrabold text-slate-100 text-lg leading-tight">Meal Manager</h2>
             <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">{role} Portal</p>
           </div>
-        </div>
+        </Link>
 
         {/* Navigation Items */}
         <nav className="space-y-1">
