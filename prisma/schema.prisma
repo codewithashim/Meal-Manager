@@ -197,6 +197,11 @@ model Expense {
   receiptUrl  String?
   createdBy   String
 
+  // Who paid out of pocket and gets credit on their bill. Unset on older entries, which fall back to createdBy.
+  memberId         String?  @db.ObjectId
+  // True when the money came from the collected mess fund, so nobody is credited.
+  paidFromMessFund Boolean?
+
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 }

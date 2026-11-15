@@ -1,57 +1,126 @@
 import { db } from "@/services/db.service";
 import { PermissionService } from "@/services/permission.service";
 import { AuditService } from "@/services/audit.service";
-import { Role, type Prisma } from "@prisma/client";
-import { CreateExpenseInput, createExpenseSchema, expenseMonthSchema, expenseCategoryFilterSchema, expenseIdSchema } from "@/lib/validations/billing";
+import { Role } from "@prisma/client";
+import {
+  CreateExpenseInput,
+  ExpenseScope,
+  createExpenseSchema,
+  expenseCategoryFilterSchema,
+  expenseIdSchema,
+  expenseMonthSchema,
+  expenseScopeSchema,
+} from "@/lib/validations/billing";
+import { expensePayerId, sumBazaarByMember } from "@/features/expenses/payer";
 
 function parseDateString(dateStr: string): Date {
   const [year, month, day] = dateStr.split("-").map(Number);
   return new Date(Date.UTC(year, month - 1, day));
 }
 
+const isManagerRole = (role: Role) => role === Role.ADMIN || role === Role.MANAGER;
+
+type PayerFields = { memberId: string | null; paidFromMessFund: boolean };
+
 export class ExpenseService {
   public static async getExpenses(
     actorRole: Role,
     actorPermissions?: string[],
     monthStr?: string,
-    categoryFilter?: string
+    categoryFilter?: string,
+    actorId?: string,
+    scope: ExpenseScope = "ALL"
   ) {
     PermissionService.enforce(actorRole, "EXPENSES", "READ", actorPermissions);
 
-    const where: Prisma.ExpenseWhereInput = {};
+    const month = expenseMonthSchema.parse(monthStr);
+    const category = categoryFilter === undefined ? "ALL" : expenseCategoryFilterSchema.parse(categoryFilter);
+    const view = expenseScopeSchema.parse(scope);
 
-    if (monthStr !== undefined) {
-      const [year, month] = expenseMonthSchema.parse(monthStr).split("-").map(Number);
-      const startDate = new Date(Date.UTC(year, month - 1, 1));
-      const endDate = new Date(Date.UTC(year, month, 1));
-      where.date = { gte: startDate, lt: endDate };
-    }
-
-    if (categoryFilter !== undefined) {
-      const category = expenseCategoryFilterSchema.parse(categoryFilter);
-      if (category !== "ALL") where.category = category;
-    }
-
-    const expenses = await db.expense.findMany({
-      where,
+    const [year, m] = month.split("-").map(Number);
+    // The whole month is loaded once so the summary always covers the full month, whatever the filters.
+    const monthExpenses = await db.expense.findMany({
+      where: { date: { gte: new Date(Date.UTC(year, m - 1, 1)), lt: new Date(Date.UTC(year, m, 1)) } },
       orderBy: { date: "desc" },
     });
 
-    const userIds = Array.from(new Set(expenses.map((e) => e.createdBy).filter(Boolean)));
-    const users = await db.user.findMany({
-      where: { id: { in: userIds } },
-      select: { id: true, name: true },
+    const nameIds = new Set<string>();
+    for (const e of monthExpenses) {
+      nameIds.add(e.createdBy);
+      const payer = expensePayerId(e);
+      if (payer) nameIds.add(payer);
+    }
+    const users = nameIds.size
+      ? await db.user.findMany({ where: { id: { in: [...nameIds] } }, select: { id: true, name: true } })
+      : [];
+    const nameOf = new Map(users.map((u) => [u.id, u.name]));
+
+    const formatted = monthExpenses.map((e) => {
+      const payerId = expensePayerId(e);
+      return {
+        ...e,
+        creatorName: nameOf.get(e.createdBy) || "Mess Member",
+        payerId,
+        payerName: payerId ? nameOf.get(payerId) || "Mess Member" : "Mess fund",
+      };
     });
-    const userMap = new Map(users.map((u) => [u.id, u.name]));
 
-    const formattedExpenses = expenses.map((e) => ({
-      ...e,
-      creatorName: userMap.get(e.createdBy) || "Mess Member",
-    }));
+    const expenses = formatted.filter(
+      (e) => (category === "ALL" || e.category === category) && (view === "ALL" || (actorId && e.payerId === actorId))
+    );
 
-    const totalAmount = expenses.reduce((acc, e) => acc + e.amount, 0);
+    const bazaarByMember = sumBazaarByMember(monthExpenses);
+    const bazaarTotal = monthExpenses.filter((e) => e.category === "FOOD").reduce((a, e) => a + e.amount, 0);
+    const messTotal = monthExpenses.reduce((a, e) => a + e.amount, 0);
 
-    return { expenses: formattedExpenses, totalAmount };
+    return {
+      expenses,
+      totalAmount: expenses.reduce((acc, e) => acc + e.amount, 0),
+      summary: {
+        messTotal,
+        bazaarTotal,
+        otherTotal: messTotal - bazaarTotal,
+        bazaarFromFund: bazaarTotal - [...bazaarByMember.values()].reduce((a, v) => a + v, 0),
+        myBazaar: actorId ? bazaarByMember.get(actorId) || 0 : 0,
+        bazaarByMember: [...bazaarByMember.entries()]
+          .map(([memberId, amount]) => ({ memberId, name: nameOf.get(memberId) || "Mess Member", amount }))
+          .sort((a, b) => b.amount - a.amount),
+      },
+    };
+  }
+
+  // Members who can be credited for bazaar a manager logs on their behalf.
+  public static async getPayerOptions(actorRole: Role, actorPermissions?: string[]) {
+    PermissionService.enforce(actorRole, "EXPENSES", "CREATE", actorPermissions);
+    if (!isManagerRole(actorRole)) return [];
+    return db.user.findMany({
+      where: { status: "ACTIVE", role: { not: Role.ADMIN } },
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    });
+  }
+
+  // Members only log their own bazaar. Managers log anything and choose who paid for food.
+  private static async resolvePayer(
+    actorId: string,
+    actorRole: Role,
+    data: { category: string; memberId?: string | null; paidFromMessFund?: boolean }
+  ): Promise<{ error: string } | PayerFields> {
+    if (!isManagerRole(actorRole)) {
+      if (data.category !== "FOOD") {
+        return { error: "Members can only log bazaar (food). Ask a manager to record utility bills and other mess costs." };
+      }
+      return { memberId: actorId, paidFromMessFund: false };
+    }
+
+    if (data.category !== "FOOD" || data.paidFromMessFund) return { memberId: null, paidFromMessFund: true };
+
+    const memberId = data.memberId || actorId;
+    if (memberId !== actorId) {
+      const member = await db.user.findUnique({ where: { id: memberId }, select: { id: true } });
+      if (!member) return { error: "The selected member no longer exists." };
+    }
+    return { memberId, paidFromMessFund: false };
   }
 
   public static async createExpense(
@@ -63,20 +132,20 @@ export class ExpenseService {
     PermissionService.enforce(actorRole, "EXPENSES", "CREATE", actorPermissions);
 
     const parsed = createExpenseSchema.safeParse(data);
-    if (!parsed.success) {
-      return { error: parsed.error.issues[0].message };
-    }
+    if (!parsed.success) return { error: parsed.error.issues[0].message };
 
-    const expenseDate = parseDateString(parsed.data.date);
+    const payer = await ExpenseService.resolvePayer(actorId, actorRole, parsed.data);
+    if ("error" in payer) return payer;
 
     const newExpense = await db.expense.create({
       data: {
         title: parsed.data.title,
         category: parsed.data.category,
         amount: parsed.data.amount,
-        date: expenseDate,
+        date: parseDateString(parsed.data.date),
         description: parsed.data.description || null,
         createdBy: actorId,
+        ...payer,
       },
     });
 
@@ -89,6 +158,58 @@ export class ExpenseService {
     });
 
     return { success: true, expense: newExpense };
+  }
+
+  public static async updateExpense(
+    actorId: string,
+    actorRole: Role,
+    actorPermissions: string[] | undefined,
+    id: string,
+    data: CreateExpenseInput
+  ) {
+    PermissionService.enforce(actorRole, "EXPENSES", "UPDATE", actorPermissions);
+    if (!expenseIdSchema.safeParse(id).success) return { error: "Invalid expense ID." };
+
+    const parsed = createExpenseSchema.safeParse(data);
+    if (!parsed.success) return { error: parsed.error.issues[0].message };
+
+    const existing = await db.expense.findUnique({ where: { id } });
+    if (!existing) return { error: "Expense not found." };
+
+    const ownOnly = !isManagerRole(actorRole);
+    if (ownOnly && existing.createdBy !== actorId) {
+      return { error: "Forbidden: You can only edit your own bazaar entries." };
+    }
+
+    const payer = await ExpenseService.resolvePayer(actorId, actorRole, parsed.data);
+    if ("error" in payer) return payer;
+    // A manager correcting someone else's entry keeps it credited to the original payer unless they chose another.
+    if (!ownOnly && !parsed.data.memberId && !parsed.data.paidFromMessFund && parsed.data.category === "FOOD") {
+      payer.memberId = expensePayerId(existing) ?? actorId;
+    }
+
+    const updated = await db.expense.updateMany({
+      where: { id, ...(ownOnly ? { createdBy: actorId } : {}) },
+      data: {
+        title: parsed.data.title,
+        category: parsed.data.category,
+        amount: parsed.data.amount,
+        date: parseDateString(parsed.data.date),
+        description: parsed.data.description || null,
+        ...payer,
+      },
+    });
+    if (updated.count !== 1) return { error: "Expense no longer exists or cannot be edited." };
+
+    await AuditService.logActivity({
+      actorId,
+      action: "UPDATE_EXPENSE",
+      entity: "Expense",
+      entityId: id,
+      details: `Edited expense ${existing.title} (৳${existing.amount} → ৳${parsed.data.amount})`,
+    });
+
+    return { success: true, previousDate: existing.date.toISOString().slice(0, 10) };
   }
 
   public static async deleteExpense(
@@ -120,6 +241,6 @@ export class ExpenseService {
       details: `Deleted expense ${expense.title} of ৳${expense.amount}`,
     });
 
-    return { success: true };
+    return { success: true, date: expense.date.toISOString().slice(0, 10) };
   }
 }

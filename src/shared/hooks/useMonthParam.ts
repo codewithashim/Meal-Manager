@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { MONTH_PARAM } from "@/lib/month";
 
 // Pages that show month-based data and should keep the selected month when navigated between.
-const MONTH_ROUTES = ["/dashboard", "/meals", "/expenses", "/bills", "/payments"];
+const MONTH_ROUTES = ["/dashboard", "/meals", "/expenses", "/bills", "/payments", "/profile"];
 
 export function useMonthHref() {
   const searchParams = useSearchParams();

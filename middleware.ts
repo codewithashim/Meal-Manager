@@ -27,6 +27,7 @@ export async function middleware(req: NextRequest) {
     "/reports",
     "/settings",
     "/audit-logs",
+    "/profile",
   ];
 
   const isProtectedRoute = protectedRoutes.some((route) => pathname.startsWith(route));

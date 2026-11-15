@@ -19,6 +19,7 @@ import {
   Bell,
   Megaphone,
   KeyRound,
+  CircleUser,
 } from "lucide-react";
 
 interface DashboardShellProps {
@@ -47,6 +48,7 @@ const ALL_NAV_ITEMS: NavItem[] = [
   { name: "Notice Board", href: "/notices", icon: Megaphone, resource: "NOTICES" },
   { name: "Security & Audit Logs", href: "/audit-logs", icon: KeyRound, resource: "AUDIT_LOGS" },
   { name: "Notifications", href: "/notifications", icon: Bell },
+  { name: "My Profile", href: "/profile", icon: CircleUser },
 ];
 
 export function DashboardShell({

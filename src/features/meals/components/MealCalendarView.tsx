@@ -13,15 +13,13 @@ import {
 } from "lucide-react";
 import AppDrawer from "@/shared/components/ui/AppDrawer";
 import MealDayEditor from "@/features/meals/components/MealDayEditor";
-import MonthSelector from "@/shared/components/ui/MonthSelector";
-import { setMonthInUrl } from "@/shared/hooks/useMonthParam";
-import { getMessDateStr } from "@/lib/month";
+import { formatMonthLabel, getMessDateStr } from "@/lib/month";
 import { getDailyMeals, getMessMonthDailyRecords, bulkSaveDailyMeals } from "@/server/actions/mealActions";
 import { toast } from "sonner";
 
 interface MealCalendarViewProps {
   currentUserRole: string;
-  initialMonth: string;
+  month: string;
 }
 
 type CalendarRecord = Awaited<ReturnType<typeof getMessMonthDailyRecords>>[number];
@@ -30,15 +28,10 @@ type Member = { id: string; name: string };
 
 export default function MealCalendarView({
   currentUserRole,
-  initialMonth,
+  month: selectedMonth,
 }: MealCalendarViewProps) {
   const isManagerOrAdmin = currentUserRole === "ADMIN" || currentUserRole === "MANAGER";
   
-  const [selectedMonth, setSelectedMonth] = useState(initialMonth); // YYYY-MM
-  const handleMonthChange = (monthStr: string) => {
-    setSelectedMonth(monthStr);
-    setMonthInUrl(monthStr);
-  };
   const [selectedUserFilter, setSelectedUserFilter] = useState<string>("ALL");
   const [viewMode, setViewMode] = useState<"AGENDA" | "GRID">("AGENDA"); // "AGENDA" (mobile friendly list) or "GRID"
   
@@ -196,12 +189,7 @@ export default function MealCalendarView({
           
           {/* Month Selector */}
           <div className="flex items-center gap-2.5 w-full sm:w-auto justify-between sm:justify-start">
-            <MonthSelector
-              value={selectedMonth}
-              onChange={handleMonthChange}
-              disabled={inspecting}
-              className="w-full sm:w-auto justify-between"
-            />
+            <h3 className="text-base font-bold text-white">{formatMonthLabel(selectedMonth)}</h3>
           </div>
 
           {/* Member Filter Selector & View Mode Switcher */}

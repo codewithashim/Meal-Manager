@@ -17,6 +17,7 @@ import {
   Megaphone,
   KeyRound,
   ShoppingCart,
+  CircleUser,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -44,6 +45,7 @@ const ALL_NAV_ITEMS: NavItem[] = [
   { name: "Notice Board", href: "/notices", icon: Megaphone, resource: "NOTICES" },
   { name: "Security & Audit Logs", href: "/audit-logs", icon: KeyRound, resource: "AUDIT_LOGS" },
   { name: "Notifications", href: "/notifications", icon: Bell },
+  { name: "My Profile", href: "/profile", icon: CircleUser },
 ];
 
 export function DashboardSidebar({ role, userName, permissions = [] }: SidebarProps) {
@@ -60,7 +62,7 @@ export function DashboardSidebar({ role, userName, permissions = [] }: SidebarPr
     <aside className="w-64 bg-slate-900 border-r border-slate-800 h-screen sticky top-0 flex flex-col justify-between p-4 shrink-0">
       <div>
         {/* Brand Logo */}
-        <div className="flex items-center gap-3 px-3 py-4 mb-6 border-b border-slate-800">
+        <Link href="/" title="Go to home page" className="flex items-center gap-3 px-3 py-4 mb-6 border-b border-slate-800 hover:opacity-90 transition">
           <div className="p-2 bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/20">
             <UtensilsCrossed className="w-6 h-6" />
           </div>
@@ -68,7 +70,7 @@ export function DashboardSidebar({ role, userName, permissions = [] }: SidebarPr
             <h2 className="font-extrabold text-slate-100 text-lg leading-tight">Meal Manager</h2>
             <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">{role} Portal</p>
           </div>
-        </div>
+        </Link>
 
         {/* Navigation Items */}
         <nav className="space-y-1">
@@ -96,7 +98,11 @@ export function DashboardSidebar({ role, userName, permissions = [] }: SidebarPr
 
       {/* User Info Card */}
       <div className="pt-4 border-t border-slate-800">
-        <div className="px-3 py-2 bg-slate-950/60 rounded-xl border border-slate-800/80 flex items-center gap-3">
+        <Link
+          href={withMonth("/profile")}
+          title="Open my profile"
+          className="px-3 py-2 bg-slate-950/60 hover:bg-slate-800/60 rounded-xl border border-slate-800/80 flex items-center gap-3 transition"
+        >
           <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 font-bold text-xs flex items-center justify-center border border-emerald-500/30">
             {userName.charAt(0).toUpperCase()}
           </div>
@@ -104,7 +110,7 @@ export function DashboardSidebar({ role, userName, permissions = [] }: SidebarPr
             <p className="text-xs font-semibold text-slate-200 truncate">{userName}</p>
             <span className="text-[10px] text-emerald-400 font-mono block uppercase">{role}</span>
           </div>
-        </div>
+        </Link>
       </div>
     </aside>
   );

@@ -107,7 +107,8 @@ function FeatureCard({
   );
 }
 
-export function LandingPage() {
+export function LandingPage({ isSignedIn = false, userName }: { isSignedIn?: boolean; userName?: string }) {
+  const appHref = isSignedIn ? "/dashboard" : "/login";
   return (
     <div className="relative min-h-dvh w-full overflow-x-clip bg-[#0b0f19] font-[family-name:var(--font-geist-sans)] text-slate-300 antialiased selection:bg-emerald-400/30 selection:text-white">
       <noscript>
@@ -141,7 +142,7 @@ export function LandingPage() {
         />
       </div>
 
-      <LandingNav />
+      <LandingNav isSignedIn={isSignedIn} userName={userName} />
 
       <main id="main" className="relative">
         {/* Hero */}
@@ -170,14 +171,14 @@ export function LandingPage() {
             </p>
             <div className="mt-9 flex flex-col items-center justify-center gap-3 motion-safe:animate-[heroIn_700ms_240ms_cubic-bezier(0.16,1,0.3,1)_both] sm:flex-row">
               <Link
-                href="/login"
+                href={appHref}
                 className="group relative inline-flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-emerald-500 px-7 text-sm font-semibold text-slate-950 shadow-[0_10px_30px_-8px_rgba(16,185,129,0.7)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-emerald-400 hover:shadow-[0_16px_40px_-8px_rgba(16,185,129,0.8)] sm:w-auto"
               >
                 <span
                   aria-hidden="true"
                   className="absolute inset-y-0 -left-1/2 w-1/2 -skew-x-12 bg-white/30 blur-md transition-transform duration-700 group-hover:translate-x-[300%]"
                 />
-                Sign in to your mess
+                {isSignedIn ? "Go to your dashboard" : "Sign in to your mess"}
                 <ArrowRight aria-hidden="true" className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
               </Link>
               <a
@@ -545,10 +546,10 @@ export function LandingPage() {
                     gave them.
                   </p>
                   <Link
-                    href="/login"
+                    href={appHref}
                     className="group mt-9 inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-emerald-500 px-8 text-sm font-semibold text-slate-950 shadow-[0_10px_30px_-8px_rgba(16,185,129,0.7)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-emerald-400"
                   >
-                    Sign in
+                    {isSignedIn ? "Go to dashboard" : "Sign in"}
                     <ArrowRight aria-hidden="true" className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
                   </Link>
                 </div>
@@ -580,7 +581,7 @@ export function LandingPage() {
               <a href="#roles" className="text-slate-400 transition-colors hover:text-white">Roles</a>
             </li>
             <li>
-              <Link href="/login" className="text-slate-400 transition-colors hover:text-white">Sign in</Link>
+              <Link href={appHref} className="text-slate-400 transition-colors hover:text-white">{isSignedIn ? "Dashboard" : "Sign in"}</Link>
             </li>
           </ul>
         </div>

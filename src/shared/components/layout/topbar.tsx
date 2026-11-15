@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { logoutAction } from "@/server/actions/authActions";
-import { LogOut, User, Bell, Menu, UtensilsCrossed } from "lucide-react";
+import { LogOut, User, Bell, Menu, UtensilsCrossed, Home } from "lucide-react";
 
 interface TopbarProps {
   userName: string;
@@ -24,7 +24,7 @@ export function DashboardTopbar({ userName, role, onOpenDrawer }: TopbarProps) {
           <Menu className="w-5 h-5" />
         </button>
 
-        <div className="flex items-center gap-2">
+        <Link href="/" title="Go to home page" className="flex items-center gap-2">
           <div className="lg:hidden p-1.5 bg-emerald-500/10 text-emerald-400 rounded-lg border border-emerald-500/20">
             <UtensilsCrossed className="w-4 h-4" />
           </div>
@@ -36,12 +36,21 @@ export function DashboardTopbar({ userName, role, onOpenDrawer }: TopbarProps) {
               Residential Mess Portal
             </span>
           </div>
-        </div>
+        </Link>
       </div>
 
       {/* Right: Notifications & User Account */}
       <div className="flex items-center gap-2 sm:gap-4">
         
+        <Link
+          href="/"
+          className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition cursor-pointer"
+          title="Home page"
+          aria-label="Go to home page"
+        >
+          <Home className="w-5 h-5" />
+        </Link>
+
         {/* Notification Link */}
         <Link
           href="/notifications"
@@ -57,13 +66,17 @@ export function DashboardTopbar({ userName, role, onOpenDrawer }: TopbarProps) {
         {/* User Pill & Sign Out */}
         <div className="flex items-center gap-2 sm:gap-3">
           
-          <div className="flex items-center gap-2 text-xs text-slate-300 bg-slate-950 px-2.5 py-1.5 rounded-xl border border-slate-800">
+          <Link
+            href="/profile"
+            title="My profile"
+            className="flex items-center gap-2 text-xs text-slate-300 bg-slate-950 hover:bg-slate-800 px-2.5 py-1.5 rounded-xl border border-slate-800 transition"
+          >
             <User className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
             <span className="font-medium max-w-[80px] sm:max-w-[120px] truncate">{userName}</span>
             <span className="hidden sm:inline-block text-[10px] px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 rounded border border-emerald-500/20 uppercase font-mono">
               {role}
             </span>
-          </div>
+          </Link>
 
           <form action={logoutAction}>
             <button

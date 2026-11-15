@@ -3,21 +3,15 @@
 import { useState, useEffect } from "react";
 import { Utensils } from "lucide-react";
 import { getUserMealHistory } from "@/server/actions/mealActions";
-import MonthSelector from "@/shared/components/ui/MonthSelector";
-import { setMonthInUrl } from "@/shared/hooks/useMonthParam";
 import { toast } from "sonner";
+import { formatMonthLabel } from "@/lib/month";
 
 interface UserMealCalendarProps {
   userId: string;
-  initialMonth: string;
+  month: string;
 }
 
-export default function UserMealCalendar({ userId, initialMonth }: UserMealCalendarProps) {
-  const [selectedMonth, setSelectedMonth] = useState(initialMonth);
-  const handleMonthChange = (monthStr: string) => {
-    setSelectedMonth(monthStr);
-    setMonthInUrl(monthStr);
-  };
+export default function UserMealCalendar({ userId, month: selectedMonth }: UserMealCalendarProps) {
   const [records, setRecords] = useState<Awaited<ReturnType<typeof getUserMealHistory>>>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -59,16 +53,8 @@ export default function UserMealCalendar({ userId, initialMonth }: UserMealCalen
             My Personal Meal Log
           </h3>
           <p className="text-xs text-slate-400 mt-0.5">
-            Daily breakdown of your recorded meals for the month.
+            Daily breakdown of your recorded meals for {formatMonthLabel(selectedMonth)}.
           </p>
-        </div>
-
-        <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-          <MonthSelector
-            value={selectedMonth}
-            onChange={handleMonthChange}
-            className="w-full sm:w-auto justify-between"
-          />
         </div>
       </div>
 

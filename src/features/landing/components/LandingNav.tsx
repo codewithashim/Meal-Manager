@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Menu, UtensilsCrossed, X } from "lucide-react";
+import { Menu, User, UtensilsCrossed, X } from "lucide-react";
 
 const LINKS = [
   { href: "#features", label: "Features" },
@@ -10,7 +10,7 @@ const LINKS = [
   { href: "#roles", label: "Roles" },
 ];
 
-export function LandingNav() {
+export function LandingNav({ isSignedIn = false, userName }: { isSignedIn?: boolean; userName?: string }) {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -46,12 +46,24 @@ export function LandingNav() {
         </ul>
 
         <div className="flex items-center gap-2">
-          <Link
-            href="/login"
-            className="inline-flex h-9 items-center rounded-lg bg-white px-4 text-sm font-medium text-slate-950 transition-colors hover:bg-slate-200"
-          >
-            Sign in
-          </Link>
+          {isSignedIn ? (
+            // Signed-in visitors get their avatar instead of a button; it opens the dashboard.
+            <Link
+              href="/dashboard"
+              title="Open dashboard"
+              aria-label={`Open dashboard${userName ? ` (signed in as ${userName})` : ""}`}
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-emerald-400/30 bg-emerald-400/15 text-sm font-bold text-emerald-400 transition-colors hover:border-emerald-400/60 hover:bg-emerald-400/25"
+            >
+              {userName ? userName.trim().charAt(0).toUpperCase() : <User aria-hidden="true" className="h-4 w-4" />}
+            </Link>
+          ) : (
+            <Link
+              href="/login"
+              className="inline-flex h-9 items-center rounded-lg bg-white px-4 text-sm font-medium text-slate-950 transition-colors hover:bg-slate-200"
+            >
+              Sign in
+            </Link>
+          )}
           <button
             type="button"
             className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-300 hover:bg-white/5 hover:text-white md:hidden"

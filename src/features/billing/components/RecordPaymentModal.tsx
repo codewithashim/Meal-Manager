@@ -1,5 +1,6 @@
 "use client";
 
+import { getMessDateStr } from "@/lib/month";
 import { useState, useEffect } from "react";
 import { Wallet, Loader2, Calendar, DollarSign, CreditCard } from "lucide-react";
 import AppDrawer from "@/shared/components/ui/AppDrawer";
@@ -29,7 +30,7 @@ export default function RecordPaymentModal({
   const [formData, setFormData] = useState({
     userId: "",
     amount: 0,
-    date: new Date().toISOString().split("T")[0],
+    date: getMessDateStr(),
     month: defaultMonth,
     paymentMethod: "CASH" as typeof paymentMethods[number],
     transactionId: "",

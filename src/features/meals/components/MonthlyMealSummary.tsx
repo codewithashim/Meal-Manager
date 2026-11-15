@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Utensils, DollarSign, Calculator, FileSpreadsheet } from "lucide-react";
 import { getMonthlyMealSummary } from "@/server/actions/mealActions";
-import MonthSelector from "@/shared/components/ui/MonthSelector";
-import { setMonthInUrl } from "@/shared/hooks/useMonthParam";
+import { formatMonthLabel } from "@/lib/month";
 import { toast } from "sonner";
 
 interface UserMonthlySummary {
@@ -21,7 +20,7 @@ interface UserMonthlySummary {
 }
 
 interface MonthlyMealSummaryProps {
-  initialMonth: string;
+  month: string;
   initialSummary: {
     messTotalMeals: number;
     totalFoodExpense: number;
@@ -30,41 +29,18 @@ interface MonthlyMealSummaryProps {
   };
 }
 
-export default function MonthlyMealSummary({ initialMonth, initialSummary }: MonthlyMealSummaryProps) {
-  const [selectedMonth, setSelectedMonth] = useState(initialMonth);
+export default function MonthlyMealSummary({ month: selectedMonth, initialSummary }: MonthlyMealSummaryProps) {
   const [summary, setSummary] = useState(initialSummary);
   const [loading, setLoading] = useState(true);
-  const [loadedMonth, setLoadedMonth] = useState(initialMonth);
+  const [loadedMonth, setLoadedMonth] = useState("");
   const requestId = useRef(0);
-  const [, startTransition] = useTransition();
-
-  const handleMonthChange = (monthStr: string) => {
-    if (!monthStr) return;
-    const currentRequest = ++requestId.current;
-    setSelectedMonth(monthStr);
-    setMonthInUrl(monthStr);
-    setLoading(true);
-    startTransition(async () => {
-      try {
-        const res = await getMonthlyMealSummary(monthStr);
-        if (currentRequest === requestId.current) {
-          setSummary(res);
-          setLoadedMonth(monthStr);
-        }
-      } catch {
-        if (currentRequest === requestId.current) toast.error("Failed to fetch monthly summary.");
-      } finally {
-        if (currentRequest === requestId.current) setLoading(false);
-      }
-    });
-  };
 
   useEffect(() => {
     const currentRequest = ++requestId.current;
-    getMonthlyMealSummary(initialMonth).then((result) => {
+    getMonthlyMealSummary(selectedMonth).then((result) => {
       if (currentRequest === requestId.current) {
         setSummary(result);
-        setLoadedMonth(initialMonth);
+        setLoadedMonth(selectedMonth);
       }
     }).catch(() => {
       if (currentRequest === requestId.current) {
@@ -75,34 +51,23 @@ export default function MonthlyMealSummary({ initialMonth, initialSummary }: Mon
       if (currentRequest === requestId.current) setLoading(false);
     });
     return () => { requestId.current += 1; };
-  }, [initialMonth]);
+  }, [selectedMonth]);
 
   return (
     <div className="space-y-6">
       
-      {/* Month Selector & Controls */}
-      <div className="glass-card rounded-2xl p-4 sm:p-5 border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div>
-          <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-            <FileSpreadsheet className="w-5 h-5 text-emerald-400" />
-            Monthly Meal & Expense Overview
-          </h3>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Aggregated meal counts and estimated meal rate calculation for the month.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-          <MonthSelector
-            value={selectedMonth}
-            onChange={handleMonthChange}
-            className="w-full sm:w-auto justify-between"
-          />
-        </div>
+      <div className="glass-card rounded-2xl p-4 sm:p-5 border border-slate-800">
+        <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+          <FileSpreadsheet className="w-5 h-5 text-emerald-400" />
+          Monthly Meal & Expense Overview — {formatMonthLabel(selectedMonth)}
+        </h3>
+        <p className="text-xs text-slate-400 mt-0.5">
+          Aggregated meal counts and estimated meal rate calculation for the month.
+        </p>
       </div>
 
       {loading || selectedMonth !== loadedMonth ? (
-        <p className="text-sm text-slate-400">{loading ? "Loading monthly summary..." : "Could not load this month. Select a month to try again."}</p>
+        <p className="text-sm text-slate-400">{loading ? "Loading monthly summary..." : "Could not load this month. Pick the month again to retry."}</p>
       ) : <div className="space-y-6">
       {/* Summary KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

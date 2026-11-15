@@ -4,6 +4,14 @@ import { auth } from "@/auth";
 import { MealService } from "@/features/meals/services/meal.service";
 import { SaveMealRecordInput, BulkDailyMealInput } from "@/lib/validations/meal";
 import { revalidatePath } from "next/cache";
+import { BillingService } from "@/features/billing/services/billing.service";
+
+// Meal counts set each member's meal cost and the meal rate, so refresh the month's generated bills.
+async function afterMealChange(date: string) {
+  await BillingService.syncMonths(date.slice(0, 7));
+  revalidatePath("/meals");
+  revalidatePath("/bills");
+}
 
 export async function getDailyMeals(dateStr?: string) {
   const session = await auth();
@@ -63,7 +71,7 @@ export async function saveSingleMealRecord(data: SaveMealRecordInput) {
       session.user.permissions,
       data
     );
-    if (result.success) revalidatePath("/meals");
+    if (result.success) await afterMealChange(data.date);
     return result;
   } catch (err: unknown) {
     return { error: err instanceof Error ? err.message : "Failed to save meal record." };
@@ -81,7 +89,7 @@ export async function bulkSaveDailyMeals(data: BulkDailyMealInput) {
       session.user.permissions,
       data
     );
-    if (result.success) revalidatePath("/meals");
+    if (result.success) await afterMealChange(data.date);
     return result;
   } catch (err: unknown) {
     return { error: err instanceof Error ? err.message : "Failed to save meal records." };

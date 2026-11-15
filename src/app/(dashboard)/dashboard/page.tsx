@@ -62,10 +62,8 @@ export default async function DashboardPage({
   let myPendingComplaints = 0;
 
   try {
-    // Generates the previous month's bills once, on the first visit of a new month.
-    await BillingService.ensureMonthlyBills(userId).catch((err) =>
-      console.error("Failed to auto-generate monthly bills:", err)
-    );
+    // Bills are derived automatically; make sure the month on screen reflects the latest data.
+    if (userId) await BillingService.syncMonths(selectedMonth);
 
     const [
       settingRes,

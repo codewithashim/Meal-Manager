@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { DashboardShell } from "@/shared/components/layout/DashboardShell";
 import { Toaster } from "sonner";
+import { db } from "@/lib/db";
 
 export default async function DashboardLayout({
   children,
@@ -15,7 +16,11 @@ export default async function DashboardLayout({
   }
 
   const role = session.user.role;
-  const userName = session.user.name || "Member";
+  // Read the name fresh so profile edits show without signing in again (the session keeps the login-time name).
+  const freshUser = await db.user
+    .findUnique({ where: { id: session.user.id }, select: { name: true } })
+    .catch(() => null);
+  const userName = freshUser?.name || session.user.name || "Member";
   const permissions = session.user.permissions || [];
 
   return (

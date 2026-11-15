@@ -20,38 +20,26 @@ export const createExpenseSchema = z.object({
   amount: z.number().positive("Amount must be greater than 0"),
   date: mealDateSchema,
   description: z.string().optional().nullable(),
+  // Managers only: who paid. Members are always recorded as paying for their own bazaar.
+  memberId: z.string().regex(/^[0-9a-f]{24}$/i, "Invalid member.").optional().nullable(),
+  paidFromMessFund: z.boolean().optional(),
 });
 
-export type CreateExpenseInput = z.infer<typeof createExpenseSchema>;
+export type CreateExpenseInput = z.input<typeof createExpenseSchema>;
+
+export const expenseScopeSchema = z.enum(["ALL", "MINE"]);
+export type ExpenseScope = z.infer<typeof expenseScopeSchema>;
 export const expenseMonthSchema = mealMonthSchema;
 export const expenseCategoryFilterSchema = z.union([z.literal("ALL"), z.enum(expenseCategories)]);
 export const expenseIdSchema = z.string().regex(/^[0-9a-f]{24}$/i, "Invalid expense ID.");
-
-export const generateBillsSchema = z.object({
-  month: z.string(), // YYYY-MM
-  utilitySharePerMember: z.number().min(0).default(0),
-  otherChargesPerMember: z.number().min(0).default(0),
-
-  // Detailed Mess Utility Bills & Staff Salaries
-  electricityBill: z.number().min(0).default(0),
-  gasBill: z.number().min(0).default(0),
-  waterBill: z.number().min(0).default(0),
-  khalaBill: z.number().min(0).default(0),
-  wifiBill: z.number().min(0).default(0),
-
-  // Flag: if true, inputs are total mess amounts (which will be split equally among active members)
-  isTotalMessBills: z.boolean().default(true),
-});
-
-export type GenerateBillsInput = z.infer<typeof generateBillsSchema>;
 
 export const paymentMethods = ["CASH", "BANK", "BKASH", "NAGAD", "OTHER"] as const;
 
 export const recordPaymentSchema = z.object({
   userId: z.string().min(1, "Member selection is required"),
   amount: z.number().positive("Payment amount must be greater than 0"),
-  date: z.string(), // YYYY-MM-DD
-  month: z.string(), // YYYY-MM
+  date: mealDateSchema,
+  month: mealMonthSchema,
   paymentMethod: z.enum(paymentMethods).default("CASH"),
   transactionId: z.string().optional().nullable(),
   note: z.string().optional().nullable(),

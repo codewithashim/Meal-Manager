@@ -41,7 +41,7 @@ export function MobileDrawer({ isOpen, onClose, role, userName, navItems }: Mobi
         <div>
           {/* Brand Header */}
           <div className="flex items-center justify-between px-2 py-3 mb-4 border-b border-slate-800">
-            <div className="flex items-center gap-2.5">
+            <Link href="/" onClick={onClose} title="Go to home page" className="flex items-center gap-2.5">
               <div className="p-2 bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/20">
                 <UtensilsCrossed className="w-5 h-5" />
               </div>
@@ -49,7 +49,7 @@ export function MobileDrawer({ isOpen, onClose, role, userName, navItems }: Mobi
                 <h2 className="font-extrabold text-white text-base leading-tight">Meal Manager</h2>
                 <span className="text-[10px] text-emerald-400 font-mono block uppercase">{role}</span>
               </div>
-            </div>
+            </Link>
 
             <button
               onClick={onClose}
@@ -87,15 +87,15 @@ export function MobileDrawer({ isOpen, onClose, role, userName, navItems }: Mobi
         {/* User Card & Logout */}
         <div className="pt-3 border-t border-slate-800 space-y-2 pb-6 sm:pb-0">
           <div className="px-3 py-2 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between">
-            <div className="flex items-center gap-2.5 overflow-hidden">
+            <Link href={withMonth("/profile")} onClick={onClose} className="flex items-center gap-2.5 overflow-hidden flex-1 min-w-0">
               <div className="w-7 h-7 rounded-full bg-emerald-500/20 text-emerald-400 font-bold text-xs flex items-center justify-center border border-emerald-500/30 shrink-0">
                 {userName.charAt(0).toUpperCase()}
               </div>
               <div className="overflow-hidden">
                 <p className="text-xs font-semibold text-slate-200 truncate">{userName}</p>
-                <span className="text-[10px] text-slate-400 block truncate">{role}</span>
+                <span className="text-[10px] text-slate-400 block truncate">{role} · View profile</span>
               </div>
-            </div>
+            </Link>
 
             <form action={logoutAction}>
               <button

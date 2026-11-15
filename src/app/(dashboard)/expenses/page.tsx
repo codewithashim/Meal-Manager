@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { getExpenses } from "@/server/actions/billingActions";
+import { getExpensePayers, getExpenses } from "@/server/actions/billingActions";
 import { getMessMonthStr, resolveMonthParam } from "@/lib/month";
 import ExpenseClientPage from "@/features/expenses/components/ExpenseClientPage";
 import { hasPermission } from "@/lib/permissions";
@@ -19,16 +19,23 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
 
   const { month } = await searchParams;
   const currentMonthStr = resolveMonthParam(month, getMessMonthStr());
-  const { expenses, totalAmount } = await getExpenses(currentMonthStr);
+  const canCreate = hasPermission(session.user.role, "EXPENSES", "CREATE", session.user.permissions);
+  const [{ expenses, totalAmount, summary }, payers] = await Promise.all([
+    getExpenses(currentMonthStr),
+    canCreate ? getExpensePayers() : Promise.resolve([]),
+  ]);
 
   return (
     <ExpenseClientPage
       initialExpenses={expenses}
       initialTotal={totalAmount}
+      initialSummary={summary}
+      payers={payers}
       initialMonth={currentMonthStr}
       currentUserRole={session.user.role}
       currentUserId={session.user.id}
-      canCreate={hasPermission(session.user.role, "EXPENSES", "CREATE", session.user.permissions)}
+      canCreate={canCreate}
+      canEdit={hasPermission(session.user.role, "EXPENSES", "UPDATE", session.user.permissions)}
       canDelete={hasPermission(session.user.role, "EXPENSES", "DELETE", session.user.permissions)}
     />
   );
