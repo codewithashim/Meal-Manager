@@ -51,3 +51,16 @@ export function getMonthRange(monthStr: string) {
     end: new Date(Date.UTC(year, month, 0, 23, 59, 59)),
   };
 }
+
+// First and last calendar day (YYYY-MM-DD) of a month.
+export function getMonthDayBounds(monthStr: string) {
+  const [year, month] = monthStr.split("-").map(Number);
+  const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  return { first: `${monthStr}-01`, last: `${monthStr}-${String(lastDay).padStart(2, "0")}` };
+}
+
+// The date a new entry should default to when a month is selected: today for the current month, otherwise its last day.
+export function getDefaultDateForMonth(monthStr: string): string {
+  const today = getMessDateStr();
+  return today.startsWith(monthStr) ? today : getMonthDayBounds(monthStr).last;
+}

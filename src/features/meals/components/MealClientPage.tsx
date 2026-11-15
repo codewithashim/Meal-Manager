@@ -5,6 +5,9 @@ import DailyMealLedger from "@/features/meals/components/DailyMealLedger";
 import MonthlyMealSummary from "@/features/meals/components/MonthlyMealSummary";
 import UserMealCalendar from "@/features/meals/components/UserMealCalendar";
 import MealCalendarView from "@/features/meals/components/MealCalendarView";
+import MonthSelector from "@/shared/components/ui/MonthSelector";
+import { setMonthInUrl } from "@/shared/hooks/useMonthParam";
+import { getDefaultDateForMonth } from "@/lib/month";
 import { UtensilsCrossed, Calendar, FileSpreadsheet, User, Grid } from "lucide-react";
 import type { getDailyMeals, getMonthlyMealSummary } from "@/server/actions/mealActions";
 
@@ -28,6 +31,13 @@ export default function MealClientPage({
   const isManagerOrAdmin = currentUserRole === "ADMIN" || currentUserRole === "MANAGER";
   
   const [activeTab, setActiveTab] = useState<"CALENDAR" | "DAILY" | "MONTHLY" | "MY_MEALS">("CALENDAR");
+  // One month drives every tab, so switching tabs never loses the selection.
+  const [selectedMonth, setSelectedMonth] = useState(initialMonth);
+
+  const handleMonthChange = (monthStr: string) => {
+    setSelectedMonth(monthStr);
+    setMonthInUrl(monthStr);
+  };
 
   return (
     <div className="space-y-4 sm:space-y-6 animate-fadeIn pb-28 lg:pb-8">
@@ -45,6 +55,12 @@ export default function MealClientPage({
               : "View and update your own daily meals."}
           </p>
         </div>
+
+        <MonthSelector
+          value={selectedMonth}
+          onChange={handleMonthChange}
+          className="w-full sm:w-auto justify-between"
+        />
       </div>
 
       {/* Navigation Tabs (Touch-friendly & horizontal scrollable on mobile) */}
@@ -100,13 +116,15 @@ export default function MealClientPage({
       {activeTab === "CALENDAR" && (
         <MealCalendarView
           currentUserRole={currentUserRole}
-          initialMonth={initialMonth}
+          month={selectedMonth}
         />
       )}
 
       {activeTab === "DAILY" && (
         <DailyMealLedger
-          initialDate={initialDate}
+          key={selectedMonth}
+          month={selectedMonth}
+          initialDate={initialDate.startsWith(selectedMonth) ? initialDate : getDefaultDateForMonth(selectedMonth)}
           initialRecords={initialDailyData.records}
           canEdit={true}
         />
@@ -114,7 +132,8 @@ export default function MealClientPage({
 
       {activeTab === "MONTHLY" && initialMonthlyData && (
         <MonthlyMealSummary
-          initialMonth={initialMonth}
+          key={selectedMonth}
+          month={selectedMonth}
           initialSummary={initialMonthlyData}
         />
       )}
@@ -122,7 +141,7 @@ export default function MealClientPage({
       {activeTab === "MY_MEALS" && (
         <UserMealCalendar
           userId={currentUserId}
-          initialMonth={initialMonth}
+          month={selectedMonth}
         />
       )}
 

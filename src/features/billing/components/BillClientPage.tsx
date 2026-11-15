@@ -1,13 +1,16 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import GenerateBillModal from "@/features/billing/components/GenerateBillModal";
+import { useRef, useState, useTransition } from "react";
+import Link from "next/link";
+import { toast } from "sonner";
 import MessCalculationSheet from "@/features/billing/components/MessCalculationSheet";
 import MemberInvoiceModal from "@/features/billing/components/MemberInvoiceModal";
 import FullMonthlyReportModal from "@/features/billing/components/FullMonthlyReportModal";
 import {
   FileSpreadsheet,
   Plus,
+  RefreshCw,
+  Zap,
   CheckCircle2,
   AlertCircle,
   Clock,
@@ -26,60 +29,52 @@ import MonthSelector from "@/shared/components/ui/MonthSelector";
 import { setMonthInUrl } from "@/shared/hooks/useMonthParam";
 import { formatMonthLabel } from "@/lib/month";
 
+type BillsData = Awaited<ReturnType<typeof getMonthlyBills>>;
+
 interface BillClientPageProps {
-  initialBills: any[];
-  initialBilled: number;
-  initialCollected: number;
-  initialDue: number;
-  initialMessSummary?: any;
+  initialData: BillsData;
   initialMonth: string;
   currentUserRole: string;
   currentUserId: string;
 }
 
 export default function BillClientPage({
-  initialBills,
-  initialBilled,
-  initialCollected,
-  initialDue,
-  initialMessSummary,
+  initialData,
   initialMonth,
   currentUserRole,
   currentUserId,
 }: BillClientPageProps) {
-  const [bills, setBills] = useState<any[]>(initialBills);
-  const [totalBilled, setTotalBilled] = useState(initialBilled);
-  const [totalCollected, setTotalCollected] = useState(initialCollected);
-  const [totalDue, setTotalDue] = useState(initialDue);
-  const [messSummary, setMessSummary] = useState<any>(initialMessSummary);
+  const [data, setData] = useState(initialData);
   const [selectedMonth, setSelectedMonth] = useState(initialMonth);
-  
-  const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
+  const { bills, totalBilled, totalCollected, totalDue, messSummary, isCurrentMonth, lastUpdated } = data;
+
   const [isFullReportModalOpen, setIsFullReportModalOpen] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- the invoice modals take loosely typed bills
   const [selectedBillForInvoice, setSelectedBillForInvoice] = useState<any | null>(null);
   const [showSummarySheet, setShowSummarySheet] = useState(true);
-
   const [isPending, startTransition] = useTransition();
+  const requestId = useRef(0);
 
   const canManage = currentUserRole === "ADMIN" || currentUserRole === "MANAGER";
+  const myBill = bills.find((b) => b.userId === currentUserId) ?? null;
 
-  const handleMonthChange = (monthStr: string) => {
-    setSelectedMonth(monthStr);
-    setMonthInUrl(monthStr);
+  // Every load re-syncs the month on the server, so this always shows up-to-date figures.
+  const loadMonth = (monthStr: string) => {
+    const request = ++requestId.current;
     startTransition(async () => {
-      const res = await getMonthlyBills(monthStr);
-      setBills(res.bills);
-      setTotalBilled(res.totalBilled);
-      setTotalCollected(res.totalCollected);
-      setTotalDue(res.totalDue);
-      if (res.messSummary) {
-        setMessSummary(res.messSummary);
+      try {
+        const res = await getMonthlyBills(monthStr);
+        if (request === requestId.current) setData(res);
+      } catch {
+        if (request === requestId.current) toast.error("Could not load bills. Please try again.");
       }
     });
   };
 
-  const handleRefresh = async () => {
-    handleMonthChange(selectedMonth);
+  const handleMonthChange = (monthStr: string) => {
+    setSelectedMonth(monthStr);
+    setMonthInUrl(monthStr);
+    loadMonth(monthStr);
   };
 
   const getStatusBadge = (status: string) => {
@@ -129,16 +124,71 @@ export default function BillClientPage({
             <Printer className="w-4 h-4 text-blue-400" /> Download Full Monthly PDF
           </button>
 
+          <button
+            onClick={() => loadMonth(selectedMonth)}
+            disabled={isPending}
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium text-xs sm:text-sm bg-slate-800 hover:bg-slate-700 active:scale-95 text-white border border-slate-700 transition cursor-pointer disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 text-emerald-400 ${isPending ? "animate-spin" : ""}`} /> Refresh
+          </button>
+
           {canManage && (
-            <button
-              onClick={() => setIsGenerateModalOpen(true)}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-xs sm:text-sm bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg shadow-blue-500/20 active:scale-95 transition cursor-pointer"
+            <Link
+              href={`/expenses?month=${selectedMonth}`}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-xs sm:text-sm bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-lg shadow-emerald-500/20 active:scale-95 transition"
             >
-              <Plus className="w-4 h-4" /> Calculate & Generate Bills
-            </button>
+              <Plus className="w-4 h-4" /> Log utility bill
+            </Link>
           )}
         </div>
       </div>
+
+      <div
+        role="status"
+        className={`rounded-2xl p-4 border text-xs sm:text-sm flex items-start gap-3 ${
+          isCurrentMonth ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-100" : "border-slate-700 bg-slate-900/60 text-slate-300"
+        }`}
+      >
+        <Zap className={`w-5 h-5 shrink-0 mt-0.5 ${isCurrentMonth ? "text-emerald-400" : "text-slate-400"}`} />
+        <p>
+          <strong className="text-white">
+            {isCurrentMonth ? `${formatMonthLabel(selectedMonth)} is in progress.` : `${formatMonthLabel(selectedMonth)} is closed.`}
+          </strong>{" "}
+          Bills are calculated automatically from meals, bazaar, utility bills logged under Expenses, room rent and
+          payments{isCurrentMonth ? ", and update the moment anything is logged." : ". Late corrections to this month still update them."}
+          {lastUpdated && (
+            <span className="block text-[11px] opacity-70 mt-0.5">
+              Last changed {new Date(lastUpdated).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}
+            </span>
+          )}
+        </p>
+      </div>
+
+      {myBill && (
+        <section className="glass-card rounded-2xl p-4 sm:p-5 border border-emerald-500/30">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <span className="text-xs font-semibold uppercase tracking-wider text-emerald-400">
+                My bill · {formatMonthLabel(selectedMonth)}{isCurrentMonth ? " (so far)" : ""}
+              </span>
+              <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 mt-1.5 text-sm text-slate-300">
+                <span>Total <strong className="text-white">৳{myBill.totalBill.toFixed(0)}</strong></span>
+                <span>Bazaar <strong className="text-emerald-400">−৳{(myBill.bazarDeposited || 0).toFixed(0)}</strong></span>
+                <span>Paid <strong className="text-emerald-400">−৳{myBill.totalPaid.toFixed(0)}</strong></span>
+                <span className={`font-extrabold ${myBill.dueAmount > 0 ? "text-rose-400" : "text-emerald-400"}`}>
+                  {myBill.dueAmount > 0 ? `Left to pay ৳${myBill.dueAmount.toFixed(0)}` : myBill.dueAmount < 0 ? `Refund ৳${Math.abs(myBill.dueAmount).toFixed(0)}` : "Settled"}
+                </span>
+              </div>
+            </div>
+            <button
+              onClick={() => setSelectedBillForInvoice(myBill)}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition cursor-pointer shrink-0"
+            >
+              <Eye className="w-4 h-4" /> View my slip
+            </button>
+          </div>
+        </section>
+      )}
 
       {/* Financial Summary KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 sm:gap-4">
@@ -233,7 +283,7 @@ export default function BillClientPage({
       <div className="block md:hidden space-y-3.5">
         {bills.length === 0 ? (
           <div className="glass-card rounded-2xl p-8 text-center text-slate-500">
-            No bills generated for {formatMonthLabel(selectedMonth)} yet.
+            No active members to bill for {formatMonthLabel(selectedMonth)}.
           </div>
         ) : (
           bills.map((b) => {
@@ -333,7 +383,7 @@ export default function BillClientPage({
               {bills.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="px-6 py-8 text-center text-slate-500">
-                    No bills generated for {formatMonthLabel(selectedMonth)} yet.
+                    No active members to bill for {formatMonthLabel(selectedMonth)}.
                   </td>
                 </tr>
               ) : (
@@ -424,14 +474,6 @@ export default function BillClientPage({
           </table>
         </div>
       </div>
-
-      {/* Generate Bill Modal */}
-      <GenerateBillModal
-        isOpen={isGenerateModalOpen}
-        onClose={() => setIsGenerateModalOpen(false)}
-        defaultMonth={selectedMonth}
-        onSuccess={handleRefresh}
-      />
 
       {/* Member Itemized Invoice Modal */}
       <MemberInvoiceModal

@@ -1,12 +1,12 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { getMonthlyBills } from "@/server/actions/billingActions";
-import { getMessMonthStr, getPreviousMonthStr, resolveMonthParam } from "@/lib/month";
+import { getMessMonthStr, resolveMonthParam } from "@/lib/month";
 import BillClientPage from "@/features/billing/components/BillClientPage";
 
 export const metadata = {
   title: "Monthly Invoices & Bills | Meal Manager",
-  description: "View itemized monthly bills, meal costs, room rent, and payment status.",
+  description: "Monthly bills calculated automatically from meals, bazaar, utility bills, rent and payments.",
 };
 
 export default async function BillsPage({ searchParams }: { searchParams: Promise<{ month?: string }> }) {
@@ -17,16 +17,13 @@ export default async function BillsPage({ searchParams }: { searchParams: Promis
   }
 
   const { month } = await searchParams;
-  const billMonthStr = resolveMonthParam(month, getPreviousMonthStr(getMessMonthStr()));
-  const { bills, totalBilled, totalCollected, totalDue, messSummary } = await getMonthlyBills(billMonthStr);
+  // Bills are live, so the page opens on the current month like every other monthly page.
+  const billMonthStr = resolveMonthParam(month, getMessMonthStr());
+  const initialData = await getMonthlyBills(billMonthStr);
 
   return (
     <BillClientPage
-      initialBills={bills as any}
-      initialBilled={totalBilled}
-      initialCollected={totalCollected}
-      initialDue={totalDue}
-      initialMessSummary={messSummary}
+      initialData={initialData}
       initialMonth={billMonthStr}
       currentUserRole={session.user.role}
       currentUserId={session.user.id}

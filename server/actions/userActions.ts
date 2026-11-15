@@ -4,6 +4,15 @@ import { auth } from "@/auth";
 import { UserService } from "@/features/users/services/user.service";
 import { CreateUserInput, UpdateUserInput } from "@/lib/validations/user";
 import { revalidatePath } from "next/cache";
+import { BillingService } from "@/features/billing/services/billing.service";
+import { getMessMonthStr } from "@/lib/month";
+
+// Rent, status and membership feed into this month's bills.
+async function afterMemberChange() {
+  await BillingService.syncMonths(getMessMonthStr());
+  revalidatePath("/users");
+  revalidatePath("/bills");
+}
 
 export async function getUsers(query?: string, roleFilter?: string, statusFilter?: string) {
   const session = await auth();
@@ -29,7 +38,7 @@ export async function createUser(data: CreateUserInput) {
       session.user.permissions,
       data
     );
-    if (result.success) revalidatePath("/users");
+    if (result.success) await afterMemberChange();
     return result;
   } catch (err: any) {
     return { error: err.message };
@@ -47,7 +56,7 @@ export async function updateUser(data: UpdateUserInput) {
       session.user.permissions,
       data
     );
-    if (result.success) revalidatePath("/users");
+    if (result.success) await afterMemberChange();
     return result;
   } catch (err: any) {
     return { error: err.message };
@@ -84,7 +93,7 @@ export async function deleteUser(id: string) {
       session.user.permissions,
       id
     );
-    if (result.success) revalidatePath("/users");
+    if (result.success) await afterMemberChange();
     return result;
   } catch (err: any) {
     return { error: err.message };

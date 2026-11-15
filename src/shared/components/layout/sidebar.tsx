@@ -17,6 +17,7 @@ import {
   Megaphone,
   KeyRound,
   ShoppingCart,
+  CircleUser,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -44,6 +45,7 @@ const ALL_NAV_ITEMS: NavItem[] = [
   { name: "Notice Board", href: "/notices", icon: Megaphone, resource: "NOTICES" },
   { name: "Security & Audit Logs", href: "/audit-logs", icon: KeyRound, resource: "AUDIT_LOGS" },
   { name: "Notifications", href: "/notifications", icon: Bell },
+  { name: "My Profile", href: "/profile", icon: CircleUser },
 ];
 
 export function DashboardSidebar({ role, userName, permissions = [] }: SidebarProps) {
@@ -96,7 +98,11 @@ export function DashboardSidebar({ role, userName, permissions = [] }: SidebarPr
 
       {/* User Info Card */}
       <div className="pt-4 border-t border-slate-800">
-        <div className="px-3 py-2 bg-slate-950/60 rounded-xl border border-slate-800/80 flex items-center gap-3">
+        <Link
+          href={withMonth("/profile")}
+          title="Open my profile"
+          className="px-3 py-2 bg-slate-950/60 hover:bg-slate-800/60 rounded-xl border border-slate-800/80 flex items-center gap-3 transition"
+        >
           <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 font-bold text-xs flex items-center justify-center border border-emerald-500/30">
             {userName.charAt(0).toUpperCase()}
           </div>
@@ -104,7 +110,7 @@ export function DashboardSidebar({ role, userName, permissions = [] }: SidebarPr
             <p className="text-xs font-semibold text-slate-200 truncate">{userName}</p>
             <span className="text-[10px] text-emerald-400 font-mono block uppercase">{role}</span>
           </div>
-        </div>
+        </Link>
       </div>
     </aside>
   );

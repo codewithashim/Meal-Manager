@@ -228,7 +228,9 @@ export default function PaymentClientPage({
       </div>
 
       {/* Record Payment Modal */}
+      {/* Keyed by month so the form always bills to the month on screen. */}
       <RecordPaymentModal
+        key={selectedMonth}
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         defaultMonth={selectedMonth}

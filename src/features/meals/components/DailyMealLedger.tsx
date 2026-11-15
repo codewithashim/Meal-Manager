@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { Calendar, ChevronLeft, ChevronRight, Save, Loader2, Plus, Minus } from "lucide-react";
 import { getDailyMeals, bulkSaveDailyMeals } from "@/server/actions/mealActions";
 import { toast } from "sonner";
+import { getMessDateStr, getMonthDayBounds } from "@/lib/month";
 
 interface DailyRecordItem {
   userId: string;
@@ -19,12 +20,16 @@ interface DailyRecordItem {
 }
 
 interface DailyMealLedgerProps {
+  month: string;
   initialDate: string;
   initialRecords: DailyRecordItem[];
   canEdit: boolean;
 }
 
-export default function DailyMealLedger({ initialDate, initialRecords, canEdit }: DailyMealLedgerProps) {
+export default function DailyMealLedger({ month, initialDate, initialRecords, canEdit }: DailyMealLedgerProps) {
+  const { first: monthFirstDay, last: monthLastDay } = getMonthDayBounds(month);
+  const todayStr = getMessDateStr();
+  const lastSelectableDay = monthLastDay < todayStr ? monthLastDay : todayStr;
   const [selectedDate, setSelectedDate] = useState(initialDate);
   const [records, setRecords] = useState<DailyRecordItem[]>(initialRecords);
   const [loading, setLoading] = useState(true);
@@ -73,7 +78,7 @@ export default function DailyMealLedger({ initialDate, initialRecords, canEdit }
   }, [initialDate]);
 
   const handleDateChange = (newDate: string) => {
-    if (!newDate) return;
+    if (!newDate || newDate < monthFirstDay || newDate > lastSelectableDay) return;
     setSelectedDate(newDate);
     fetchDailyData(newDate);
   };
@@ -187,8 +192,8 @@ export default function DailyMealLedger({ initialDate, initialRecords, canEdit }
           <button
             type="button"
             onClick={() => shiftDate(-1)}
-            disabled={saving}
-            className="p-2 sm:p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white active:scale-95 transition cursor-pointer"
+            disabled={saving || selectedDate <= monthFirstDay}
+            className="p-2 sm:p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white active:scale-95 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             title="Previous Day"
           >
             <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -200,6 +205,8 @@ export default function DailyMealLedger({ initialDate, initialRecords, canEdit }
               type="date"
               aria-label="Meal date"
               value={selectedDate}
+              min={monthFirstDay}
+              max={lastSelectableDay}
               disabled={saving}
               onChange={(e) => handleDateChange(e.target.value)}
               className="min-w-0 w-full bg-transparent font-semibold text-xs sm:text-sm focus:outline-none cursor-pointer text-center"
@@ -209,21 +216,21 @@ export default function DailyMealLedger({ initialDate, initialRecords, canEdit }
           <button
             type="button"
             onClick={() => shiftDate(1)}
-            disabled={saving}
-            className="p-2 sm:p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white active:scale-95 transition cursor-pointer"
+            disabled={saving || selectedDate >= lastSelectableDay}
+            className="p-2 sm:p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white active:scale-95 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             title="Next Day"
           >
             <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
 
-          <button
+          {todayStr.startsWith(month) && <button
             type="button"
-            onClick={() => handleDateChange(new Date().toISOString().split("T")[0])}
+            onClick={() => handleDateChange(todayStr)}
             disabled={saving}
             className="px-3 py-2 text-xs font-semibold rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 active:scale-95 transition cursor-pointer shrink-0"
           >
             Today
-          </button>
+          </button>}
         </div>
 
         {/* Quick Actions & Save Button */}

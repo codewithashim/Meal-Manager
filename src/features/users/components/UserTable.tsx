@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { UserData } from "./UserModal";
 import {
   Edit2,
@@ -14,6 +15,7 @@ import {
   XCircle,
   AlertCircle,
   KeyRound,
+  Eye,
 } from "lucide-react";
 import { deleteUser, toggleMealStatus } from "@/server/actions/userActions";
 import { toast } from "sonner";
@@ -202,6 +204,15 @@ export default function UserTable({
                 {u.mealStatus ? "Meals On" : "Meals Off"}
               </button>
 
+              <Link
+                href={`/profile/${u.id}`}
+                className="p-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 transition"
+                title="View Profile"
+                aria-label={`View ${u.name}'s profile`}
+              >
+                <Eye className="w-4 h-4" />
+              </Link>
+
               {currentUserRole === "ADMIN" && (
                 <button
                   onClick={() => onAccessControl && onAccessControl(u)}
@@ -322,6 +333,15 @@ export default function UserTable({
                   {/* Actions */}
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
+                      <Link
+                        href={`/profile/${u.id}`}
+                        className="p-2 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 transition"
+                        title="View Profile"
+                        aria-label={`View ${u.name}'s profile`}
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Link>
+
                       {currentUserRole === "ADMIN" && (
                         <button
                           onClick={() => onAccessControl && onAccessControl(u)}

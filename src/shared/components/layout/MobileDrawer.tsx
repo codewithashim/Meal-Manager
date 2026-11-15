@@ -87,15 +87,15 @@ export function MobileDrawer({ isOpen, onClose, role, userName, navItems }: Mobi
         {/* User Card & Logout */}
         <div className="pt-3 border-t border-slate-800 space-y-2 pb-6 sm:pb-0">
           <div className="px-3 py-2 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between">
-            <div className="flex items-center gap-2.5 overflow-hidden">
+            <Link href={withMonth("/profile")} onClick={onClose} className="flex items-center gap-2.5 overflow-hidden flex-1 min-w-0">
               <div className="w-7 h-7 rounded-full bg-emerald-500/20 text-emerald-400 font-bold text-xs flex items-center justify-center border border-emerald-500/30 shrink-0">
                 {userName.charAt(0).toUpperCase()}
               </div>
               <div className="overflow-hidden">
                 <p className="text-xs font-semibold text-slate-200 truncate">{userName}</p>
-                <span className="text-[10px] text-slate-400 block truncate">{role}</span>
+                <span className="text-[10px] text-slate-400 block truncate">{role} · View profile</span>
               </div>
-            </div>
+            </Link>
 
             <form action={logoutAction}>
               <button
